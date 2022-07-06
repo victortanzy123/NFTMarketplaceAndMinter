@@ -85,7 +85,12 @@ export async function deployUUPSUpgradableContract<CType extends Contract>(deplo
 
   if (verify === true) {
     console.log("Awaiting sufficient block confirmations before verifying...")
-    await sleep(verifyContract, [(await implementation).address, constructor]);
+    await timeout(60000);
+    console.log(`Verifying ${name}-implementation contract at ${implementation.address}...`)
+    await verifyContract(implementation.address, constructor)
+
+    console.log(`Verifying ${name}-proxy at ${proxy.address}`)
+    await verifyContract(proxy.address, [implementation.address, initializeTx.data!]);
   }
 
   return {
