@@ -83,7 +83,7 @@ export async function deployUUPSUpgradableContract<CType extends Contract>(deplo
   const proxy = await proxyFactory.deploy(implementation.address, initializeTx.data!);
   console.log(`${name}-proxy deployed at address: ${(await proxy).address}`);
 
-  if (verify === true) {
+  if (verify === true) { 
     console.log("Awaiting sufficient block confirmations before verifying...")
     await timeout(60000);
     console.log(`Verifying ${name}-implementation contract at ${implementation.address}...`)
