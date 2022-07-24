@@ -6,9 +6,7 @@ import "./IMarketplaceMetadata.sol";
 import "./INFTStandardChecker.sol";
 
 interface INiftyzoneMarketplace is IMarketplaceMetadata {
-
-
-    /*///////////////////////////////////////////////////////////////
+  /*///////////////////////////////////////////////////////////////
                         Main Data Structures
     //////////////////////////////////////////////////////////////*/
 
@@ -147,7 +145,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     uint256 _price,
     uint256 _quantity,
     uint256 _numberOfDays
-  ) external payable;
+  ) external;
 
   /**
    *  @notice Lets someone buy NFT(s) from a valid marketplace listing.
@@ -156,10 +154,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *
    *  @param _quantity The desired quantity to be bought by buyer.
    */
-  function createMarketSale(
-    uint256 _listingId,
-    uint256 _quantity
-  ) external payable;
+  function createMarketSale(uint256 _listingId, uint256 _quantity) external payable;
 
   /**
    *  @notice Lets the owner of a valid marketplace listing delist his own listing.
@@ -173,12 +168,18 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *
    *  @param _listingId   Unique listing ID pointing to the marketplace listing to delist.
    *
-   *  @param _updatedPrice   New price per token set by owner.
+   *  @param _updatedPrice   New price per token set by owner, must be lower than previous listing price.
+   *
+   *  @param _extendedTimestamp   New extended listing expiration timestamp if > 0.
    */
-  function updateMarketItem(uint256 _listingId, uint256 _updatedPrice) external returns(uint256);
+  function updateMarketItem(
+    uint256 _listingId,
+    uint256 _updatedPrice,
+    uint256 _extendedTimestamp
+  ) external returns (uint256 updatedPrice, uint256 updatedDeadline);
 
   /**
-   *  @notice Lets someone make an offer to a direct listing, or bid in an auction.
+   *  @notice Lets someone make an offer to a direct listing.
    *
    *  @dev Each (address, listing ID) pair maps to a single unique offer. So e.g. if a buyer makes
    *       makes two offers to the same direct listing, the last offer is counted as the buyer's
@@ -186,9 +187,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *
    *  @param _listingId        The unique ID of the lisitng to make an offer/bid to.
    *
-   *  @param _quantityDesired   For auction listings: the 'quantity wanted' is the total amount of NFTs
-   *                           being auctioned, regardless of the value of `_quantityWanted` passed.
-   *                           For direct listings: `_quantityWanted` is the quantity of NFTs from the
+   *  @param _quantityDesired  For direct listings: `_quantityWanted` is the quantity of NFTs from the
    *                           listing, for which the offer is being made.
    *
    *  @param _currency         For auction listings: the 'currency of the bid' is the currency accepted
@@ -198,7 +197,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *  @param _pricePerToken    For direct listings: offered price per token. For auction listings: the bid
    *                           amount per token. The total offer/bid amount is `_quantityWanted * _pricePerToken`.
    *
-   *  @param _expirationTimestamp For aution listings: inapplicable. For direct listings: The timestamp after which
+   *  @param _expirationTimestamp For direct listings: The timestamp after which
    *                              the seller can no longer accept the offer.
    */
   function offer(
@@ -207,7 +206,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     address _currency,
     uint256 _pricePerToken,
     uint256 _expirationTimestamp
-  ) external payable;
+  ) external;
 
   /**
    * @notice Lets a listing's creator accept an offer to their direct listing.
