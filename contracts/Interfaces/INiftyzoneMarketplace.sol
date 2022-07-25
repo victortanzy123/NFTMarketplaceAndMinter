@@ -18,6 +18,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *  @param nftContract        The asset contract.
    *  @param tokenId The specific tokenId listed for sale.
    *  @param seller       The owner creating the listing.
+   *  @param currency  Address of ERC20 token, if native would be zero address
    *  @param price  The price per token offered to the lister.
    *  @param originalQuantity The original quantity of tokens (>= 1 for ERC-1155 token standards).
    *  @param quantity The remaining quantity left in the listing.
@@ -31,6 +32,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     address nftContract;
     uint256 tokenId;
     address payable seller;
+    address currency;
     uint256 price;
     uint256 originalQuantity;
     uint256 quantity;
@@ -64,28 +66,30 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
   /*///////////////////////////////////////////////////////////////
                                 Events
     //////////////////////////////////////////////////////////////*/
-  // Events for MarketItem Created:
+  /// Events for MarketItem Created:
   event MarketItemCreated(
     uint256 indexed listingId,
     address indexed nftContract,
     uint256 tokenId,
     address indexed seller,
+    address currency,
     uint256 price,
     uint256 quantity,
     uint256 contractType,
     uint256 deadline
   );
 
-  // Events for MarketItem Price Update:
+  /// Events for MarketItem Price Update:
   event MarketItemPriceUpdate(
     uint256 indexed listingId,
     address indexed nftContract,
     uint256 tokenid,
     address indexed seller,
+    address currency,
     uint256 newPrice
   );
 
-  // Events for MarketItem Delisted:
+  /// Events for MarketItem Delisted:
   event MarketItemDelisted(
     uint256 indexed listingId,
     address indexed nftContract,
@@ -112,10 +116,11 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     address indexed buyer
   );
 
+  /// Events for new offer made to an existing valid marketplace listing
   event NewOffer(
     uint256 indexed listingId,
     address indexed offeror,
-    address _currency,
+    address currency,
     uint256 desiredQuantity,
     uint256 totalOfferAmount
   );
@@ -129,10 +134,11 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
    *
    *  @param _nftContract        The asset contract address - has to comply to ERC-721 or ERC-1155.
    *
+   *  @param _currency    Currency of token accepted for sale.
+   *
    *  @param _tokenId   The asset's tokenId.
    *
    *  @param _price    Price per token listed.
-   *
    *
    *  @param _quantity   Quantity of tokens to be listed -> only 1 for ERC-721 and >= 1 for ERC-1155.
    *
@@ -141,6 +147,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
 
   function createMarketItem(
     address _nftContract,
+    address _currency,
     uint256 _tokenId,
     uint256 _price,
     uint256 _quantity,

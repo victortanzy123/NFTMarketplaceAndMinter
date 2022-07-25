@@ -46,7 +46,6 @@ contract NiftyzoneMarketplace is
   UUPSUpgradeable
 {
   using SafeERC20Upgradeable for IERC20Upgradeable;
-  // For NFT Token Standard Introspection:
   using ERC165Checker for address;
 
   // For Counting of NFT/Market items
@@ -67,13 +66,13 @@ contract NiftyzoneMarketplace is
   bool public marketplaceStatus;
 
   /// @dev NFT Token Standards:
-  bytes4 public constant IID_NFTStandardChecker = type(INFTStandardChecker).interfaceId;
-  bytes4 public constant IID_IERC165 = type(IERC165Upgradeable).interfaceId;
-  bytes4 public constant IID_IERC20 = type(IERC20Upgradeable).interfaceId;
-  bytes4 public constant IID_IERC721 = type(IERC721Upgradeable).interfaceId;
-  bytes4 public constant IID_IERC1155 = type(IERC1155Upgradeable).interfaceId;
+  bytes4 private constant IID_NFTStandardChecker = type(INFTStandardChecker).interfaceId;
+  bytes4 private constant IID_IERC165 = type(IERC165Upgradeable).interfaceId;
+  bytes4 private constant IID_IERC20 = type(IERC20Upgradeable).interfaceId;
+  bytes4 private constant IID_IERC721 = type(IERC721Upgradeable).interfaceId;
+  bytes4 private constant IID_IERC1155 = type(IERC1155Upgradeable).interfaceId;
   // bytes4 public constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
-  bytes4 public constant IID_IERC2981 = type(IERC2981Upgradeable).interfaceId;
+  bytes4 private constant IID_IERC2981 = type(IERC2981Upgradeable).interfaceId;
 
   /*///////////////////////////////////////////////////////////////
                                 Mappings
@@ -101,7 +100,7 @@ contract NiftyzoneMarketplace is
   /// @dev Checks whether listing specified by listingId is a valid one.
   modifier onlyValidListing(uint256 _listingId) {
     MarketItem memory selectedListing = idToMarketItem[_listingId];
-    require(selectedListing.listed, "Invalid Listing");
+    require(selectedListing.listed, "invalid listing");
     require(selectedListing.deadline > block.timestamp, "listing expired");
     _;
   }
@@ -157,6 +156,7 @@ contract NiftyzoneMarketplace is
   /// @dev For any account to list their existing NFTs (both ERC-721 or ERC-1155) on the marketplace by specifying a desired price, quantity to put up for sale and deadline.
   function createMarketItem(
     address _nftContract,
+    address _currency,
     uint256 _tokenId,
     uint256 _price,
     uint256 _quantity,
@@ -167,10 +167,15 @@ contract NiftyzoneMarketplace is
 
     currentListingIndex.increment();
     uint256 listingId = currentListingIndex.current();
-    address seller = _msgSender();
 
+    address seller = _msgSender();
     uint256 tokenType = getTokenType(_nftContract);
+
     validateOwnershipAndApproval(seller, _nftContract, _tokenId, _quantity, tokenType);
+
+    if (_currency != address(0)) {
+      require(supportedCurrencies[_currency], "not supported currency");
+    }
 
     // Creating the Market Item data saved via mapping
     idToMarketItem[listingId] = MarketItem(
@@ -178,6 +183,7 @@ contract NiftyzoneMarketplace is
       _nftContract,
       _tokenId,
       payable(seller),
+      _currency,
       _price,
       _quantity,
       _quantity,
@@ -193,6 +199,7 @@ contract NiftyzoneMarketplace is
       _nftContract,
       _tokenId,
       _msgSender(),
+      _currency,
       _price,
       _quantity,
       tokenType,
@@ -209,63 +216,76 @@ contract NiftyzoneMarketplace is
     marketplaceActive
     onlyValidListing(_listingId)
   {
-    MarketItem memory selectedListing = idToMarketItem[_listingId];
+    uint256 listingId = _listingId;
+    uint256 quantityToBuy = _quantity;
+    MarketItem memory selectedListing = idToMarketItem[listingId];
 
     address nftContract = selectedListing.nftContract;
-    uint256 price = selectedListing.price;
+    address currency = selectedListing.currency;
     uint256 tokenId = selectedListing.tokenId;
-    uint256 quantityToBuy = _quantity;
 
-    require(quantityToBuy <= selectedListing.quantity, "Invalid quantity");
-    require(msg.value == price * quantityToBuy, "Unmatched value sent");
-
-    // NFT Token Standard:
-    uint256 tokenType = selectedListing.contractType;
-
+    uint256 totalTxValue = selectedListing.price * quantityToBuy;
     // Owner of NFT to be sold:
     address payable listingOwner = selectedListing.seller;
     require(listingOwner != _msgSender(), "Cannot buy your own NFT");
 
-    // Validate Ownership and Approval before transaction:
-    validateOwnershipAndApproval(listingOwner, nftContract, tokenId, quantityToBuy, tokenType);
+    require(quantityToBuy <= selectedListing.quantity, "Invalid quantity");
+    if (currency == address(0)) {
+      require(msg.value == totalTxValue, "Unmatched value sent");
 
-    // Next, Transfer Ownership of the NFT to the buyer from Niftyzone Marketplace Contract:
-    idToMarketItem[_listingId] = processAssetTransfer(
-      selectedListing,
-      _msgSender(),
-      quantityToBuy
-    );
+      // (If Applicable) Payout to the creator by the royalties specified:
 
-    // (If Applicable) Payout to the creator by the royalties specified:
-    uint256 totalValue = msg.value;
-    uint256 marketplaceCut = (totalValue * marketplaceFee) / MAX_BPS;
+      uint256 marketplaceCut = (totalTxValue * marketplaceFee) / MAX_BPS;
 
-    if (checkRoyalties(nftContract)) {
-      try IERC2981Upgradeable(nftContract).royaltyInfo(tokenId, msg.value) returns (
-        address royaltyFeeReceipient,
-        uint256 royaltyFeeAmount
-      ) {
-        if (royaltyFeeAmount > 0) {
-          payable(royaltyFeeReceipient).transfer(royaltyFeeAmount);
-        }
-      } catch {}
+      if (checkRoyalties(nftContract)) {
+        try IERC2981Upgradeable(nftContract).royaltyInfo(tokenId, msg.value) returns (
+          address royaltyFeeReceipient,
+          uint256 royaltyFeeAmount
+        ) {
+          if (royaltyFeeAmount > 0) {
+            payable(royaltyFeeReceipient).transfer(royaltyFeeAmount);
+          }
+        } catch {}
+      }
+
+      // Pay Royalty to markerplace Manager/Owner:
+      payable(owner).transfer(marketplaceCut);
+
+      // Transfer the fee to the seller:
+      listingOwner.transfer(address(this).balance);
+    } else {
+      validateERC20BalanceAndAllowance(_msgSender(), currency, totalTxValue);
+
+      processERC20CurrencyTransaction(
+        _msgSender(),
+        listingOwner,
+        currency,
+        totalTxValue,
+        selectedListing
+      );
     }
 
-    // Pay Royalty to markerplace Manager/Owner:
-    payable(owner).transfer(marketplaceCut);
-
-    // Transfer the fee to the seller:
-    listingOwner.transfer(address(this).balance);
-
-    emit MarketItemSale(
-      _listingId,
+    // Validate Ownership and Approval before transaction:
+    validateOwnershipAndApproval(
+      listingOwner,
       nftContract,
       tokenId,
       quantityToBuy,
-      msg.value,
+      selectedListing.contractType
+    );
+
+    // Next, Transfer Ownership of the NFT to the buyer from Niftyzone Marketplace Contract:
+    idToMarketItem[listingId] = processAssetTransfer(selectedListing, _msgSender(), quantityToBuy);
+
+    emit MarketItemSale(
+      listingId,
+      nftContract,
+      tokenId,
+      quantityToBuy,
+      totalTxValue,
       block.timestamp,
-      tokenType,
-      address(0),
+      selectedListing.contractType,
+      currency,
       listingOwner,
       _msgSender()
     );
@@ -732,7 +752,7 @@ contract NiftyzoneMarketplace is
       interfaceID == IID_IERC2981;
   }
 
-  /// @dev Returns the interface supported by a contract.
+  /// @dev Returns the NFT interface supported by a contract, else it will revert.
   function getTokenType(address _assetContract) internal view returns (uint256 tokenType) {
     if (
       IERC165Upgradeable(_assetContract).supportsInterface(type(IERC1155Upgradeable).interfaceId)
