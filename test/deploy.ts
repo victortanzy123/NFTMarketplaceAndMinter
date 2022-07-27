@@ -111,8 +111,9 @@ export async function deployUUPSUpgradableContract<CType extends Contract>(deplo
 
   if (verify === true) { 
     console.log("Awaiting sufficient block confirmations before verifying...")
+    console.log("Initialize data!", initializeTx.data!)
     await timeout(60000);
-    console.log(`Verifying ${name}-implementation contract at ${implementation.address}...`)
+    console.log(`Verifying ${name}-implementation contract at ${(await implementation).address}...`)
     await verifyContract(implementation.address, constructor)
 
     console.log(`Verifying ${name}-proxy at ${proxy.address}`)
@@ -124,6 +125,33 @@ export async function deployUUPSUpgradableContract<CType extends Contract>(deplo
     proxy: await getContractAt<CType>(abiType, proxy.address)
   }
 }
+
+// export async function upgradeUUPSUpgradeableContract<CType extends Contract>(deployer: SignerWithAddress, abiType: string, proxyAddress: string, oldImplementationAddress: string, verify?: boolean, name?: string): Promise<{
+//   newImplementation: CType,
+//   proxy: CType
+// }>{
+//   name = name || abiType;
+//   console.log(`Deploying Updated ${name}-implementation for proxy ${proxyAddress}`);
+
+//   const newImplementationFactory = await hre.ethers.getContractFactory(abiType);
+//   const newImplementation = await newImplementationFactory.connect(deployer).deploy(); // Check if need constructor
+//   await newImplementation.deployed();
+
+//   console.log(`New ${name}-implementation deployed at address: ${(await newImplementation).address}`);
+
+//   // const proxyContract = await hre.ethers.getContractAt("ERC1967Proxy", proxyAddress);
+
+//   const oldImplementationContract = await hre.ethers.getContractAt("NiftyzoneMarketplace", oldImplementationAddress);
+
+//   const upgradeTx = await oldImplementationContract.upgradeTo((await newImplementation).address);
+
+
+//   return {
+//     newImplementation: newImplementation as CType,
+//     proxy: await getContractAt<CType>(abiType, proxyAddress)
+//   }
+
+// }
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();

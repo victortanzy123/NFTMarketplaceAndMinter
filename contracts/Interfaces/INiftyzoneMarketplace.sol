@@ -66,7 +66,9 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
   /*///////////////////////////////////////////////////////////////
                                 Events
     //////////////////////////////////////////////////////////////*/
-  /// Events for MarketItem Created:
+  /**
+   * @dev Emitted when a user lists his own digital asset out for a direct sale.
+   */
   event MarketItemCreated(
     uint256 indexed listingId,
     address indexed nftContract,
@@ -79,7 +81,9 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     uint256 deadline
   );
 
-  /// Events for MarketItem Price Update:
+  /**
+   * @dev Emitted when a seller updates the price and/or increase the expiration timing of the listing.
+   */
   event MarketItemPriceUpdate(
     uint256 indexed listingId,
     address indexed nftContract,
@@ -89,7 +93,9 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     uint256 newPrice
   );
 
-  /// Events for MarketItem Delisted:
+  /**
+   * @dev Emitted when a seller chooses to invalidate his/her own existing valid listing.
+   */
   event MarketItemDelisted(
     uint256 indexed listingId,
     address indexed nftContract,
@@ -100,8 +106,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
   );
 
   /**
-   * @dev Emitted when a buyer buys from a direct listing, or a lister accepts some
-   *      buyer's offer to their direct listing.
+   * @dev Emitted when a buyer buys from a direct listing, or a lister accepts a valid listing offer.
    */
   event MarketItemSale(
     uint256 indexed listingId,
@@ -116,7 +121,9 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     address indexed buyer
   );
 
-  /// Events for new offer made to an existing valid marketplace listing
+  /**
+   * @dev Emitted when a buyer makes an offer to an existing valid listing via a supported ERC20 currency.
+   */
   event NewOffer(
     uint256 indexed listingId,
     address indexed offeror,
@@ -130,7 +137,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     //////////////////////////////////////////////////////////////*/
 
   /**
-   *  @notice Lets someone list an NFT they owned regardless if its ERC-721 or ERC-1155 token standard, supporting multiple copy listing for ERC-1155 standard..
+   *  @notice Lets someone list an NFT they owned regardless if its ERC-721 or ERC-1155 token standard, supporting multiple copy listing for ERC-1155 standard.
    *
    *  @param _nftContract        The asset contract address - has to comply to ERC-721 or ERC-1155.
    *

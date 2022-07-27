@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-// Accounting Helper:
+// Supporting Contracts:
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 // Token Standard Interfaces:
