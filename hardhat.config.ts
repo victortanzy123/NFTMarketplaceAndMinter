@@ -77,6 +77,18 @@ const config: HardhatUserConfig = {
       gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
+    bsc: {
+      url: `https://bsc-dataseed.binance.org/`,
+      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      gasPrice: 30 * 1000000000,
+      timeout: 200000,
+    },
+    polygon: {
+      url: `https://polygon-rpc.com`,
+      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      gasPrice: 30 * 1000000000,
+      timeout: 200000,
+    },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECTID}`,
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
@@ -99,7 +111,9 @@ const config: HardhatUserConfig = {
     // Obtain one at https://etherscan.io/
     // apiKey: process.env.SNOWTRACE_KEY,
     apiKey: {
-      rinkeby: process.env.ETHERSCAN_API_KEY
+      rinkeby: process.env.ETHERSCAN_API_KEY,
+      bsc: process.env.BSCSCAN_API_KEY,
+      polygon: process.env.POLYGONSCAN_API_KEY,
     },
   },
 };
