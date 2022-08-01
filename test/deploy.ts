@@ -144,6 +144,8 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(dep
 
   const upgradeTx = await oldImplementationContract.upgradeTo((await newImplementation).address);
 
+  await upgradeTx.wait();
+
 
   return {
     newImplementation: newImplementation as CType,
@@ -154,8 +156,6 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(dep
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
-
-  // let contract = await  deployUUPSUpgradableContract<TestContract>(deployer, "TestContract", [],[], true, "TestContract")
 
   let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[["0x0CB481aa69B8eC20c5C9C4f8750370E1E59173ca"]], true, "NiftyzoneMarketplace");
 
