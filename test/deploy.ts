@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, Contract } from 'ethers';
 import hre from 'hardhat';
-import {TestContract, ERC1967Proxy, NiftyzoneMarketplace, NiftyzoneNFTMinter } from '../typechain';
+import {TestContract, ERC1967Proxy, NiftyzoneMarketplace, NiftyzoneMinter } from '../typechain';
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
   return (await hre.ethers.getContractAt(abiType, address)) as CType;
@@ -45,11 +45,12 @@ export async function deploy<CType extends Contract>(deployer: SignerWithAddress
 
   // Wait 1 minute before verifying on etherscan
   console.log("Awaiting sufficient block confirmation on the network...")
-  setTimeout(async ()=>{
+
     if (verify === true) {
+      await timeout(60000);
       await verifyContract(contract.address, args);
     }
-  }, 60000)
+
 
   
   return contract as CType;
@@ -157,7 +158,9 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(dep
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
-  let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[["0x0CB481aa69B8eC20c5C9C4f8750370E1E59173ca"]], false, "NiftyzoneMarketplace");
+  let minterContract = await deploy<NiftyzoneMinter>(deployer, "NiftyzoneMinter", [], true)
+
+  let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[[]], true, "NiftyzoneMarketplace");
 
 }
 
