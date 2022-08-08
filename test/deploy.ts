@@ -157,7 +157,7 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(dep
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
-  let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[["0x0CB481aa69B8eC20c5C9C4f8750370E1E59173ca"]], true, "NiftyzoneMarketplace");
+  let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[["0x0CB481aa69B8eC20c5C9C4f8750370E1E59173ca"]], false, "NiftyzoneMarketplace");
 
 }
 

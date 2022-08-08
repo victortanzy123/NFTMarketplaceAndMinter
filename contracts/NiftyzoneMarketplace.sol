@@ -169,9 +169,9 @@ contract NiftyzoneMarketplace is
     uint256 listingId = currentListingIndex.current();
 
     address seller = _msgSender();
-    uint256 tokenType = getTokenType(_nftContract);
+    uint256 tokenType = _getTokenType(_nftContract);
 
-    validateOwnershipAndApproval(seller, _nftContract, _tokenId, _quantity, tokenType);
+    _validateOwnershipAndApproval(seller, _nftContract, _tokenId, _quantity, tokenType);
 
     if (_currency != address(0)) {
       require(supportedCurrencies[_currency], "not supported currency");
@@ -237,7 +237,7 @@ contract NiftyzoneMarketplace is
 
       uint256 marketplaceCut = (totalTxValue * marketplaceFee) / MAX_BPS;
 
-      if (checkRoyalties(nftContract)) {
+      if (_checkRoyalties(nftContract)) {
         try IERC2981Upgradeable(nftContract).royaltyInfo(tokenId, msg.value) returns (
           address royaltyFeeReceipient,
           uint256 royaltyFeeAmount
@@ -254,7 +254,7 @@ contract NiftyzoneMarketplace is
       // Transfer the fee to the seller:
       listingOwner.transfer(address(this).balance);
     } else {
-      validateERC20BalanceAndAllowance(_msgSender(), currency, totalTxValue);
+      _validateERC20BalanceAndAllowance(_msgSender(), currency, totalTxValue);
 
       processERC20CurrencyTransaction(
         _msgSender(),
@@ -266,7 +266,7 @@ contract NiftyzoneMarketplace is
     }
 
     // Validate Ownership and Approval before transaction:
-    validateOwnershipAndApproval(
+    _validateOwnershipAndApproval(
       listingOwner,
       nftContract,
       tokenId,
@@ -275,7 +275,7 @@ contract NiftyzoneMarketplace is
     );
 
     // Next, Transfer Ownership of the NFT to the buyer from Niftyzone Marketplace Contract:
-    idToMarketItem[listingId] = processAssetTransfer(selectedListing, _msgSender(), quantityToBuy);
+    _processAssetTransfer(listingId, _msgSender(), quantityToBuy);
 
     emit MarketItemSale(
       listingId,
@@ -331,7 +331,7 @@ contract NiftyzoneMarketplace is
     MarketItem storage selectedListing = idToMarketItem[_listingId];
 
     // Validate ownership and approval:
-    validateOwnershipAndApproval(
+    _validateOwnershipAndApproval(
       selectedListing.seller,
       selectedListing.nftContract,
       selectedListing.tokenId,
@@ -339,7 +339,7 @@ contract NiftyzoneMarketplace is
       selectedListing.contractType
     );
 
-    require(_updatedPrice < selectedListing.price, "Listing price only can be lowered");
+    require(_updatedPrice < selectedListing.price, "Only lower price");
 
     // Once all check is completed, update price & deadline accordingly:
     selectedListing.price = _updatedPrice;
@@ -377,7 +377,7 @@ contract NiftyzoneMarketplace is
 
     require(supportedCurrencies[_currency], "unsupported currency");
 
-    processOffer(selectedListing, newOffer);
+    _processOffer(selectedListing, newOffer);
   }
 
   /// @dev For seller/owner of valid marketplace listing to accept a pending offer with a currency that is strictly ERC-20 standard and is approved as one of the supported currencies from an potential buyer.
@@ -402,7 +402,7 @@ contract NiftyzoneMarketplace is
       "invalid total value"
     );
 
-    validateDirectSale(
+    _validateDirectSale(
       selectedListing,
       _offeror,
       selectedOffer.quantityWanted,
@@ -423,8 +423,8 @@ contract NiftyzoneMarketplace is
     );
 
     // Process Transfer of Assets
-    idToMarketItem[_listingId] = processAssetTransfer(
-      selectedListing,
+    _processAssetTransfer(
+      selectedListing.listingId,
       selectedOffer.offeror,
       selectedOffer.quantityWanted
     );
@@ -448,12 +448,12 @@ contract NiftyzoneMarketplace is
     //////////////////////////////////////////////////////////////*/
 
   /// @dev Validate and process if the offer can be made valid by ensuring that the quantity specified to be bought in the offer and the offeror's desired currency balance is enough to pay off the total amount tabulated based on his price offered.
-  function processOffer(MarketItem memory _selectedListing, Offer memory _newOffer) internal {
-    validateSafeQuantity(_newOffer.quantityWanted, _selectedListing.quantity);
+  function _processOffer(MarketItem memory _selectedListing, Offer memory _newOffer) internal {
+    _validateSafeQuantity(_newOffer.quantityWanted, _selectedListing.quantity);
 
     uint256 totalOfferValue = _newOffer.quantityWanted * _newOffer.pricePerToken;
 
-    validateERC20BalanceAndAllowance(_newOffer.offeror, _newOffer.currency, totalOfferValue);
+    _validateERC20BalanceAndAllowance(_newOffer.offeror, _newOffer.currency, totalOfferValue);
 
     offers[_selectedListing.listingId][_newOffer.offeror] = _newOffer;
 
@@ -467,40 +467,39 @@ contract NiftyzoneMarketplace is
   }
 
   /// @dev Process the respective asset transfer from seller to buyer after all checks have been validated and payment has been completed successfully.
-  function processAssetTransfer(
-    MarketItem memory _selectedListing,
+  function _processAssetTransfer(
+    uint256 _selectedListingId,
     address _buyer,
     uint256 _quantityToBuy
-  ) internal returns (MarketItem memory) {
-    uint256 tokenStandard = _selectedListing.contractType;
+  ) internal {
+    MarketItem storage selectedListing = idToMarketItem[_selectedListingId];
 
-    if (tokenStandard == 721) {
-      require(_quantityToBuy == 1, "invalid quantity for ERC721");
-      _selectedListing.quantity = 0;
-      IERC721Upgradeable(_selectedListing.nftContract).safeTransferFrom(
-        _selectedListing.seller,
-        _buyer,
-        _selectedListing.tokenId
-      );
-    } else {
-      _selectedListing.quantity -= _quantityToBuy;
-      IERC1155Upgradeable(_selectedListing.nftContract).safeTransferFrom(
-        _selectedListing.seller,
-        _buyer,
-        _selectedListing.tokenId,
-        _quantityToBuy,
-        ""
-      );
-    }
+    selectedListing.quantity -= _quantityToBuy;
 
-    if (_selectedListing.quantity == 0) {
-      _selectedListing.listed = false;
+    if (selectedListing.quantity == 0) {
+      selectedListing.listed = false;
 
       totalSold.increment();
       totalListings.decrement();
     }
 
-    return _selectedListing;
+    uint256 tokenStandard = selectedListing.contractType;
+
+    if (tokenStandard == 721) {
+      IERC721Upgradeable(selectedListing.nftContract).safeTransferFrom(
+        selectedListing.seller,
+        _buyer,
+        selectedListing.tokenId
+      );
+    } else {
+      IERC1155Upgradeable(selectedListing.nftContract).safeTransferFrom(
+        selectedListing.seller,
+        _buyer,
+        selectedListing.tokenId,
+        _quantityToBuy,
+        ""
+      );
+    }
   }
 
   /// @dev Process the payment split to the relevant parties - marketplaceOwnership, secondary royalties receiver (if applicable) and lastly the seller.
@@ -515,7 +514,7 @@ contract NiftyzoneMarketplace is
     uint256 marketplaceCut = (_totalValue * marketplaceFee) / MAX_BPS;
     uint256 secondaryRoyalties;
 
-    if (checkRoyalties(_selectedListing.nftContract)) {
+    if (_checkRoyalties(_selectedListing.nftContract)) {
       try
         IERC2981Upgradeable(_selectedListing.nftContract).royaltyInfo(
           _selectedListing.tokenId,
@@ -547,7 +546,7 @@ contract NiftyzoneMarketplace is
     //////////////////////////////////////////////////////////////*/
 
   /// @dev Validate the ownership of the quantity of NFT tokens specified to be listed and also the approval to transact on the user's behalf when a buyer commits a direct sale.
-  function validateOwnershipAndApproval(
+  function _validateOwnershipAndApproval(
     address _tokenOwner,
     address _nftContract,
     uint256 _tokenId,
@@ -560,26 +559,26 @@ contract NiftyzoneMarketplace is
       require(
         IERC721Upgradeable(_nftContract).isApprovedForAll(_tokenOwner, address(this)) ||
           IERC721Upgradeable(_nftContract).getApproved(_tokenId) == marketplace,
-        "ERC721: Contract not approved."
+        "ERC721: Contract not approved"
       );
       require(
         IERC721Upgradeable(_nftContract).ownerOf(_tokenId) == _tokenOwner,
-        "ERC721: Invalid token ownership."
+        "ERC721: Invalid token ownership"
       );
     } else {
       require(
         _quantity <= IERC1155Upgradeable(_nftContract).balanceOf(_tokenOwner, _tokenId),
-        "ERC1155: Insufficient quantity to list."
+        "ERC1155: Insufficient quantity"
       );
       require(
         IERC1155Upgradeable(_nftContract).isApprovedForAll(_tokenOwner, address(this)),
-        "ERC1155: Contract not approved."
+        "ERC1155: Contract not approved"
       );
     }
   }
 
   /// @dev Validate if there is sufficient balance and approval of allowance for the marketplace contract to transact on the buyer's behalf.
-  function validateERC20BalanceAndAllowance(
+  function _validateERC20BalanceAndAllowance(
     address _account,
     address _currency,
     uint256 _value
@@ -595,21 +594,18 @@ contract NiftyzoneMarketplace is
   }
 
   /// @dev Validate the pending listing sale by ensuring that the listing is valid, quantity specified to transact is safe, sufficient ERC20 balance & allowance from buyer and also the asset ownership & approval for marketplace to transact on their behalf.
-  function validateDirectSale(
+  function _validateDirectSale(
     MarketItem memory _selectedListing,
     address _buyer,
     uint256 _quantityToBuy,
     address _currency,
     uint256 _totalOfferValue
   ) internal view {
-    require(_selectedListing.listed, "invalid listing");
-    require(_selectedListing.deadline > block.timestamp, "expired listing");
+    _validateSafeQuantity(_quantityToBuy, _selectedListing.quantity);
 
-    validateSafeQuantity(_quantityToBuy, _selectedListing.quantity);
+    _validateERC20BalanceAndAllowance(_buyer, _currency, _totalOfferValue);
 
-    validateERC20BalanceAndAllowance(_buyer, _currency, _totalOfferValue);
-
-    validateOwnershipAndApproval(
+    _validateOwnershipAndApproval(
       _selectedListing.seller,
       _selectedListing.nftContract,
       _selectedListing.tokenId,
@@ -642,13 +638,13 @@ contract NiftyzoneMarketplace is
   }
 
   /// @dev Pure function to validate if the quantity specified by buyer is validate on the particular listing based on the token standard.
-  function validateSafeQuantity(uint256 _quantity, uint256 _curListedQuantity) internal pure {
+  function _validateSafeQuantity(uint256 _quantity, uint256 _curListedQuantity) internal pure {
     require(_quantity != 0, "invalid quantity");
     require(_quantity <= _curListedQuantity, "insufficient listed");
   }
 
   /// @dev To check if the NFT contract supports EIP-2981 royalties structure.
-  function checkRoyalties(address _contract) internal view returns (bool) {
+  function _checkRoyalties(address _contract) internal view returns (bool) {
     return IERC165(_contract).supportsInterface(IID_IERC2981);
   }
 
@@ -669,7 +665,7 @@ contract NiftyzoneMarketplace is
   /// @dev For owner to approve or revoke approval on any ERC20 supported currencies used for offers on prevailing valid listings.
   function setSupportedCurrencies(address _token, bool _status) external onlyOwner {
     require(_token != address(0), "zero address");
-    require(isERC20(IERC20Upgradeable(_token)), "not ERC20 token standard");
+    require(_isERC20(IERC20Upgradeable(_token)), "not ERC20 token standard");
     supportedCurrencies[_token] = _status;
   }
 
@@ -680,11 +676,11 @@ contract NiftyzoneMarketplace is
   function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
   /*///////////////////////////////////////////////////////////////
-                        ERC 165 / 721 / 1155 logic
+                    ERC 165 / 721 / 1155 / 20 logic
     //////////////////////////////////////////////////////////////*/
 
   /// @dev Checks if the address is of ERC-721 token standard.
-  function isERC721(IERC721Upgradeable _721Contract) internal view returns (bool) {
+  function _isERC721(IERC721Upgradeable _721Contract) internal view returns (bool) {
     try _721Contract.supportsInterface(IID_IERC721) returns (bool) {
       return true;
     } catch {
@@ -693,7 +689,7 @@ contract NiftyzoneMarketplace is
   }
 
   /// @dev Checks if the address is of ERC-1155 token standard.
-  function isERC1155(IERC1155Upgradeable _1155Contract) internal view returns (bool) {
+  function _isERC1155(IERC1155Upgradeable _1155Contract) internal view returns (bool) {
     try _1155Contract.supportsInterface(IID_IERC1155) returns (bool) {
       return true;
     } catch {
@@ -702,11 +698,26 @@ contract NiftyzoneMarketplace is
   }
 
   // /// @dev Checks if the address is of ERC-20 token standard.
-  function isERC20(IERC20Upgradeable _20Contract) internal view returns (bool) {
+  function _isERC20(IERC20Upgradeable _20Contract) internal view returns (bool) {
     try _20Contract.totalSupply() returns (uint256) {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /// @dev Returns the NFT interface supported by a contract, else it will revert.
+  function _getTokenType(address _assetContract) internal view returns (uint256 tokenType) {
+    if (
+      IERC165Upgradeable(_assetContract).supportsInterface(type(IERC1155Upgradeable).interfaceId)
+    ) {
+      tokenType = 1155;
+    } else if (
+      IERC165Upgradeable(_assetContract).supportsInterface(type(IERC721Upgradeable).interfaceId)
+    ) {
+      tokenType = 721;
+    } else {
+      revert("token must be ERC1155 or ERC721.");
     }
   }
 
@@ -750,21 +761,6 @@ contract NiftyzoneMarketplace is
       interfaceID == IID_IERC721 ||
       interfaceID == IID_IERC1155 ||
       interfaceID == IID_IERC2981;
-  }
-
-  /// @dev Returns the NFT interface supported by a contract, else it will revert.
-  function getTokenType(address _assetContract) internal view returns (uint256 tokenType) {
-    if (
-      IERC165Upgradeable(_assetContract).supportsInterface(type(IERC1155Upgradeable).interfaceId)
-    ) {
-      tokenType = 1155;
-    } else if (
-      IERC165Upgradeable(_assetContract).supportsInterface(type(IERC721Upgradeable).interfaceId)
-    ) {
-      tokenType = 721;
-    } else {
-      revert("token must be ERC1155 or ERC721.");
-    }
   }
 
   /*///////////////////////////////////////////////////////////////
