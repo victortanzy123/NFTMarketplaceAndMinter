@@ -158,7 +158,7 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(dep
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
-  let minterContract = await deploy<NiftyzoneMinter>(deployer, "NiftyzoneMinter", [], true)
+  // let minterContract = await deploy<NiftyzoneMinter>(deployer, "NiftyzoneMinter", [], true)
 
   let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[[]], true, "NiftyzoneMarketplace");
 
