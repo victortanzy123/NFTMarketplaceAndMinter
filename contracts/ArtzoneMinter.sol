@@ -146,7 +146,7 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
 
         // Update quantity count for tokenId created:
         tokenIdQuantityCount[_tokenId] += _quantity;
-        mint(msg.sender, _tokenId, _quantity);
+        mint(_receiver, _tokenId, _quantity);
         
         emit TokenMint(
             _tokenId,
