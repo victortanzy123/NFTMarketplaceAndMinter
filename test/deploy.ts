@@ -174,12 +174,20 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
-  // // Deploy Niftyzone minter Contract
-  // let minterContract = await deploy<NiftyzoneMinter>(deployer, "NiftyzoneMinter", [], true)
+  // Deploy Niftyzone Minter Contract
+  let minterContract = await deploy<NiftyzoneMinter>(deployer, 'NiftyzoneMinter', [], true);
 
-  // // Deploy Niftyzone Marketplace (UUPS) Contract
-  // let marketplaceContract = await  deployUUPSUpgradableContract<NiftyzoneMarketplace>(deployer, "NiftyzoneMarketplace", [],[[]], true, "NiftyzoneMarketplace");
+  // Deploy Niftyzone Marketplace (UUPS) Contract
+  let marketplaceContract = await deployUUPSUpgradableContract<NiftyzoneMarketplace>(
+    deployer,
+    'NiftyzoneMarketplace',
+    [],
+    [[]],
+    true,
+    'NiftyzoneMarketplace'
+  );
 
+  // Deploy Artzone Minter Contract
   let artzoneMinterContract = await deploy<ArtzoneMinter>(deployer, 'ArtzoneMinter', [], true);
 }
 
