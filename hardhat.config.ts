@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 
-import { HardhatUserConfig } from 'hardhat/config';
+import {HardhatUserConfig} from 'hardhat/config';
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
@@ -25,9 +25,9 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 3000,
           },
-        }
-      }
-    ]
+        },
+      },
+    ],
   },
   networks: {
     hardhat: {
@@ -94,7 +94,13 @@ const config: HardhatUserConfig = {
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
       gasPrice: 30 * 1000000000,
       timeout: 200000,
-    }
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`,
+      accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
+      gasPrice: 30 * 1000000000,
+      timeout: 200000,
+    },
   },
   typechain: {
     target: 'ethers-v5',
@@ -112,6 +118,7 @@ const config: HardhatUserConfig = {
     // apiKey: process.env.SNOWTRACE_KEY,
     apiKey: {
       rinkeby: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
       bsc: process.env.BSCSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
     },
