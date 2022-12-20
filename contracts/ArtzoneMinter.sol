@@ -2,89 +2,71 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./Helpers/BoringOwnable.sol";
+import "./Helpers/ERC2981/ERC2981RoyaltiesPerToken.sol";
 
-// Royalties Standard - EIP2981:
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-// @dev: Contract used to add ERC2981 Support to ERC721 or ERC1155
-abstract contract ERC2981Support is IERC2981, ERC165 {
-    struct RoyaltyInfo {
-        address recipient;
-        uint24 amount;
-    }
+contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    // @inherit from ERC165:
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC165, IERC165)
-        returns (bool)
-    {
-        return
-            interfaceId == type(IERC2981).interfaceId ||
-            super.supportsInterface(interfaceId);
-    }
-}
-
-// Contract to extend functionality for minter to specify royalty for each tokenId minted:
-abstract contract ERC2981RoyaltiesPerToken is ERC2981Support {
-    // tokenId mapped to its individual specified royalty:
-    mapping(uint256 => RoyaltyInfo) internal royalties;
-
-    /// @dev Sets token royalties
-    /// @param _tokenId the token id fir which we register the royalties
-    /// @param _recipient recipient of the royalties
-    /// @param _royaltyValue percentage (using 2 decimals - 10000 = 100, 0 = 0)
-    function setTokenRoyalty(
-        uint256 _tokenId,
-        address _recipient,
-        uint256 _royaltyValue
-    ) internal {
-        require(_royaltyValue <= 10000, "ERC2981Royalties: Invalid Range");
-        royalties[_tokenId] = RoyaltyInfo(_recipient, uint24(_royaltyValue));
-    }
-
-    // @inherit from IERC2981:
-    function royaltyInfo(uint256 _tokenId, uint256 _value)
-        public
-        view
-        virtual
-        override
-        returns (address receiver, uint256 royaltyAmount)
-    {
-        RoyaltyInfo memory royalty = royalties[_tokenId];
-        receiver = royalty.recipient;
-        royaltyAmount = (_value * royalty.amount) / 10000;
-    }
-}
-
-contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
     string public constant name = "Artzone Collections";
     string public constant symbol = "ARTZONE COLLECTIONS";
 
-    mapping(uint256 => uint256) public tokenIdQuantityCount;
-    mapping(uint256 => uint256) public tokenIdMaxCount;
-    mapping(uint256 => string) public tokenIdToURI;
+      /*///////////////////////////////////////////////////////////////
+                            Mappings
+    //////////////////////////////////////////////////////////////*/
+
+    mapping(uint256 => uint256) public tokenSupply;
+    mapping(uint256 => uint256) public tokenMaxSupply;
+    mapping(uint256 => string) private tokenIdUri;
     mapping(uint256 => bool) public tokenUpdateAccess;
 
+
+  /*///////////////////////////////////////////////////////////////
+                            Modifiers
+    //////////////////////////////////////////////////////////////*/
+
+      /// @dev Checks if the token has been initialised prior to minting.
     modifier validateInitialisedToken(uint256 _tokenId){
         require(_tokenId <= _tokenIds.current(), "Uninitialised token");
         _;
     }
 
+      /// @dev Checks if the quantity specified for minting is valid.
     modifier validateMint(uint256 _tokenId, uint256 _quantity){
-        require(_quantity != 0, "Mint quantity cannot be 0");
-        require(tokenIdQuantityCount[_tokenId] + _quantity <= tokenIdMaxCount[_tokenId], "Invalid quantity specified.");
+        require(_quantity != 0, "Mint quantity cannot be 0.");
+        require(tokenSupply[_tokenId] + _quantity <= tokenMaxSupply[_tokenId], "Invalid quantity specified.");
         _;
     }
+
+  /// @dev Checks if the quantities specified for batch minting is valid.
+    modifier validateBatchMint(uint256[] memory _tokens, uint256[] memory _quantities){
+        require(_tokens.length == _quantities.length, "Mismatch token quantities");
+        for (uint256 i = 0; i < _tokens.length;){
+            require(_quantities[i] != 0, "Mint quantity cannot be 0");
+            require(tokenSupply[_tokens[i]] + _quantities[i] <= tokenMaxSupply[_tokens[i]], "Invalid quantity specified");
+
+            unchecked{
+                i++;
+            }
+        }
+        _;
+    }
+
+    /// @dev Checks for admin role.
+    modifier isMinter(){
+        require(hasRole(MINTER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Unauthorised role");
+        _;
+    }
+
+      /*///////////////////////////////////////////////////////////////
+                                Events
+    //////////////////////////////////////////////////////////////*/
 
       event TokenInitialisation(
         uint256 indexed tokenId,
@@ -94,7 +76,6 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         string tokenUri
     );
 
-    // Event to track creator minting:
     event TokenMint(
         uint256 indexed tokenId,
         uint256 quantity, 
@@ -105,22 +86,34 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         uint256 tokenId
     );
 
-    constructor() ERC1155("Add in?") {
+      /*///////////////////////////////////////////////////////////////
+                            Constructor
+    //////////////////////////////////////////////////////////////*/
+    constructor(address _minter) ERC1155("") {
+        require(_minter != address(0), "null address");
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, _minter);
     }
 
-    // Initialise token metadata and specifications
+      /*///////////////////////////////////////////////////////////////
+                    Artzone Minter External Functions
+    //////////////////////////////////////////////////////////////*/
+
+     /**
+     * @notice Token initialisation before minting is allowed. Only permissable to whitelisted admin wallets.
+     */
     function initialiseToken(
     string memory _tokenURI, 
     uint256 _maxQuantity,
     address _royaltyRecipient,
     uint256 _royaltyValue,
     bool _accessToUpdateToken
-    ) external onlyOwner {
+    ) external isMinter {
         _tokenIds.increment();
         uint256 tokenId = _tokenIds.current();
 
         setURI(tokenId, _tokenURI);
-        tokenIdMaxCount[tokenId] = _maxQuantity;
+        tokenMaxSupply[tokenId] = _maxQuantity;
         tokenUpdateAccess[tokenId] = _accessToUpdateToken;
 
         // Set Royalty Info if specified:
@@ -137,15 +130,17 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         );
     }
 
-    // Minting permissions only lies with contract owner:
+    /**
+     * @notice Minting of a token to a receipient, permission only exclusive to whitelisted admin wallet.
+     */
     function mintToken(
         uint256 _tokenId,
         uint256 _quantity,
         address _receiver
-    ) external onlyOwner validateMint(_tokenId, _quantity) {
+    ) external isMinter validateMint(_tokenId, _quantity) {
 
         // Update quantity count for tokenId created:
-        tokenIdQuantityCount[_tokenId] += _quantity;
+        tokenSupply[_tokenId] += _quantity;
         mint(_receiver, _tokenId, _quantity);
         
         emit TokenMint(
@@ -155,15 +150,52 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         );
     }
 
-    function mint(
-        address _to,
-        uint256 _id,
-        uint256 _amount
-    ) private {
-        _mint(_to, _id, _amount, "");
+    /**
+     * @notice Batch minting of multiple tokenIds with varying respective quantities to a receipient, permission only exclusive to whitelisted admin wallet.
+     */
+    function batchMintToken(uint256[] memory _tokens, uint256[] memory _quantities, address _receiver) external isMinter validateBatchMint(_tokens, _quantities){
+        uint256 length = _tokens.length;
+        for(uint256 i = 0; i < length;){
+            uint256 tokenId = _tokens[i];
+            uint256 quantity = _quantities[i];
+            tokenSupply[tokenId] += quantity;
+            mint(_receiver, tokenId, quantity);
+
+            emit TokenMint(
+            tokenId,
+            quantity,
+            _receiver
+            );
+
+            unchecked{
+                i++;
+            }
+        }
     }
 
-    function setApprovalForAll(address operator, bool approved)
+     /**
+     * @notice One way lock of locking up tokenURI update access, only permissable by admins.
+     */
+    function lockTokenUpdateAccess(uint256 _tokenId) external isMinter validateInitialisedToken(_tokenId) {
+        tokenUpdateAccess[_tokenId] = false;
+
+        emit TokenAccessLock(_tokenId);
+    }
+
+
+    /**
+     * @notice For admins to override existing tokenURI should it be allowed to.
+     */
+    function overrideExistingURI(
+        uint256 _tokenId,
+        string memory _newUri
+    ) external isMinter validateInitialisedToken(_tokenId) {
+        require(tokenUpdateAccess[_tokenId], "Permissions to update denied");
+        tokenIdUri[_tokenId] = _newUri;
+        emit URI(_newUri, _tokenId);
+    }
+
+     function setApprovalForAll(address operator, bool approved)
         public
         virtual
         override
@@ -174,34 +206,34 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
     function burn(uint256 _id, uint256 _amount) external {
         uint256 balanceOfOwner = balanceOf(msg.sender, _id);
 
-        require(balanceOfOwner >= 1, "Invalid ownership balance.");
-        require(balanceOfOwner <= _amount, "invalid amount specified.");
+        require(balanceOfOwner >= 1, "Invalid ownership balance");
+        require(balanceOfOwner <= _amount, "invalid amount specified");
         _burn(msg.sender, _id, _amount);
     }
 
+      /*///////////////////////////////////////////////////////////////
+                        Internal/Private Functions
+    //////////////////////////////////////////////////////////////*/
+
+    function mint(
+        address _to,
+        uint256 _id,
+        uint256 _amount
+    ) private {
+        _mint(_to, _id, _amount, "");
+    }
+
+   
+
     function setURI(uint256 _id, string memory _uri) private {
-        tokenIdToURI[_id] = _uri;
+        tokenIdUri[_id] = _uri;
         emit URI(_uri, _id);
     }
 
-    // One-way locking function to prevent editing access of tokenURI:
-    function lockTokenUpdateAccess(uint256 _tokenId) external onlyOwner validateInitialisedToken(_tokenId) {
-        require(tokenUpdateAccess[_tokenId], "Permissions already locked.");
-        tokenUpdateAccess[_tokenId] = false;
 
-        emit TokenAccessLock(_tokenId);
-    }
-
-
-    function overrideExistingURI(
-        uint256 _tokenId,
-        string memory _newUri
-    ) external onlyOwner validateInitialisedToken(_tokenId) {
-        require(tokenUpdateAccess[_tokenId], "Permissions to update denied.");
-        tokenIdToURI[_tokenId] = _newUri;
-        emit URI(_newUri, _tokenId);
-    }
-
+    /*///////////////////////////////////////////////////////////////
+                            View Functions
+    //////////////////////////////////////////////////////////////*/
 
     function uri(uint256 _tokenId)
         public
@@ -210,10 +242,12 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         override
         returns (string memory)
     {
-        return tokenIdToURI[_tokenId];
+        return tokenIdUri[_tokenId];
     }
 
-    // Query current Royalty Structure for a specific tokenId:
+    /**
+     * @notice To query creator royalties info based on ERC2981 Implementation.
+     */
     function royaltyInfo(uint256 _tokenId, uint256 _value)
         public
         view
@@ -229,9 +263,10 @@ contract ArtzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
         public
         view
         virtual
-        override(ERC1155, ERC2981Support)
+        override(ERC1155, ERC2981Support, AccessControl)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+       
+        return ERC1155.supportsInterface(interfaceId) || ERC2981Support.supportsInterface(interfaceId);
     }
 }
