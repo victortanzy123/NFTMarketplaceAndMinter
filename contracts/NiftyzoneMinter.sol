@@ -9,58 +9,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 // Royalties Standard - EIP2981:
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
+import "./Helpers/ERC2981/ERC2981RoyaltiesPerToken.sol";
+
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-
-// @dev: Contract used to add ERC2981 Support to ERC721 or ERC1155
-abstract contract ERC2981Support is IERC2981, ERC165 {
-  struct RoyaltyInfo {
-    address recipient;
-    uint24 amount;
-  }
-
-  // @inherit from ERC165:
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    virtual
-    override(ERC165, IERC165)
-    returns (bool)
-  {
-    return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
-  }
-}
-
-// Contract to extend functionality for minter to specify royalty for each tokenId minted:
-abstract contract ERC2981RoyaltiesPerToken is ERC2981Support {
-  // tokenId mapped to its individual specified royalty:
-  mapping(uint256 => RoyaltyInfo) internal royalties;
-
-  /// @dev Sets token royalties
-  /// @param _tokenId the token id fir which we register the royalties
-  /// @param _recipient recipient of the royalties
-  /// @param _royaltyValue percentage (using 2 decimals - 10000 = 100, 0 = 0)
-  function setTokenRoyalty(
-    uint256 _tokenId,
-    address _recipient,
-    uint256 _royaltyValue
-  ) internal {
-    require(_royaltyValue <= 10000, "ERC2981Royalties: Invalid Range");
-    royalties[_tokenId] = RoyaltyInfo(_recipient, uint24(_royaltyValue));
-  }
-
-  // @inherit from IERC2981:
-  function royaltyInfo(uint256 _tokenId, uint256 _value)
-    public
-    view
-    virtual
-    override
-    returns (address receiver, uint256 royaltyAmount)
-  {
-    RoyaltyInfo memory royalty = royalties[_tokenId];
-    receiver = royalty.recipient;
-    royaltyAmount = (_value * royalty.amount) / 10000;
-  }
-}
 
 contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
   using Counters for Counters.Counter;
@@ -75,7 +26,7 @@ contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
   mapping(uint256 => bool) public tokenUpdateAccess;
 
   // Event to track creator minting:
-  event tokenCreation(
+  event TokenCreation(
     uint256 indexed tokenId,
     uint256 timestamp,
     uint256 quantity,
@@ -119,7 +70,7 @@ contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
       setTokenRoyalty(currentTokenId, _royaltyRecipient, _royaltyValue);
     }
 
-    emit tokenCreation(
+    emit TokenCreation(
       currentTokenId,
       block.timestamp,
       _quantity,
@@ -212,6 +163,6 @@ contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
     override(ERC1155, ERC2981Support)
     returns (bool)
   {
-    return super.supportsInterface(interfaceId);
+    return ERC1155.supportsInterface(interfaceId) || ERC2981Support.supportsInterface(interfaceId);
   }
 }
