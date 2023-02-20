@@ -33,7 +33,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
 
       /// @dev Checks if the token has been initialised prior to minting.
     modifier validateInitialisedToken(uint256 _tokenId){
-        require(_tokenId <= _tokenIds.current(), "Uninitialised token");
+        require(_tokenId <= _tokenIds.current(), "Uninitialised token.");
         _;
     }
 
@@ -48,8 +48,8 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
     modifier validateBatchMint(uint256[] memory _tokens, uint256[] memory _quantities){
         require(_tokens.length == _quantities.length, "Mismatch token quantities");
         for (uint256 i = 0; i < _tokens.length;){
-            require(_quantities[i] != 0, "Mint quantity cannot be 0");
-            require(tokenSupply[_tokens[i]] + _quantities[i] <= tokenMaxSupply[_tokens[i]], "Invalid quantity specified");
+            require(_quantities[i] != 0, "Mint quantity cannot be 0.");
+            require(tokenSupply[_tokens[i]] + _quantities[i] <= tokenMaxSupply[_tokens[i]], "Invalid quantity specified.");
 
             unchecked{
                 i++;
@@ -60,7 +60,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
 
     /// @dev Checks for admin role.
     modifier isMinter(){
-        require(hasRole(MINTER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Unauthorised role");
+        require(hasRole(MINTER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Unauthorised role.");
         _;
     }
 
@@ -76,12 +76,6 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
         string tokenUri
     );
 
-    event TokenMint(
-        uint256 indexed tokenId,
-        uint256 quantity, 
-        address receiver
-    );
-
     event TokenAccessLock(
         uint256 tokenId
     );
@@ -90,7 +84,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
                             Constructor
     //////////////////////////////////////////////////////////////*/
     constructor(address _minter) ERC1155("") {
-        require(_minter != address(0), "null address");
+        require(_minter != address(0), "null address.");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, _minter);
     }
@@ -117,7 +111,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
         tokenUpdateAccess[tokenId] = _accessToUpdateToken;
 
         // Set Royalty Info if specified:
-        if (_royaltyValue > 0) {
+        if (_royaltyValue != 0) {
             setTokenRoyalty(tokenId, _royaltyRecipient, _royaltyValue);
         }
 
@@ -141,36 +135,14 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
 
         // Update quantity count for tokenId created:
         tokenSupply[_tokenId] += _quantity;
-        mint(_receiver, _tokenId, _quantity);
-        
-        emit TokenMint(
-            _tokenId,
-            _quantity,
-            _receiver
-        );
+        _mint(_receiver, _tokenId, _quantity);
     }
 
     /**
      * @notice Batch minting of multiple tokenIds with varying respective quantities to a receipient, permission only exclusive to whitelisted admin wallet.
      */
     function batchMintToken(uint256[] memory _tokens, uint256[] memory _quantities, address _receiver) external isMinter validateBatchMint(_tokens, _quantities){
-        uint256 length = _tokens.length;
-        for(uint256 i = 0; i < length;){
-            uint256 tokenId = _tokens[i];
-            uint256 quantity = _quantities[i];
-            tokenSupply[tokenId] += quantity;
-            mint(_receiver, tokenId, quantity);
-
-            emit TokenMint(
-            tokenId,
-            quantity,
-            _receiver
-            );
-
-            unchecked{
-                i++;
-            }
-        }
+        _mintBatch(_receiver, _tokens, _quantities, "");
     }
 
      /**
@@ -206,7 +178,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
     function burn(uint256 _id, uint256 _amount) external {
         uint256 balanceOfOwner = balanceOf(msg.sender, _id);
 
-        require(balanceOfOwner >= 1, "Invalid ownership balance");
+        require(balanceOfOwner != 0, "Invalid ownership balance");
         require(balanceOfOwner <= _amount, "invalid amount specified");
         _burn(msg.sender, _id, _amount);
     }
@@ -215,7 +187,7 @@ contract ArtzoneMinter is ERC1155,ERC2981RoyaltiesPerToken, BoringOwnable, Acces
                         Internal/Private Functions
     //////////////////////////////////////////////////////////////*/
 
-    function mint(
+    function _mint(
         address _to,
         uint256 _id,
         uint256 _amount

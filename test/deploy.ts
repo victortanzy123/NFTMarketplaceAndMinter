@@ -188,7 +188,7 @@ async function main() {
   // );
 
   // Deploy Artzone Minter Contract
-  let artzoneMinterContract = await deploy<ArtzoneMinter>(deployer, 'ArtzoneMinter', ["0x42c0810EF178f96FD76f085e48bd8a2a480Ba727"], true);
+  let artzoneMinterContract = await deploy<ArtzoneMinter>(deployer, 'ArtzoneMinter', ["0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F"], true);
 }
 
 main()
