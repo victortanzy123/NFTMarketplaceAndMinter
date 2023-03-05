@@ -1,7 +1,14 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {BigNumber, Contract} from 'ethers';
 import hre from 'hardhat';
-import {TestContract, ERC1967Proxy, NiftyzoneMarketplace, NiftyzoneMinter, ArtzoneMinter} from '../typechain';
+import {
+  TestContract,
+  ERC1967Proxy,
+  NiftyzoneMarketplace,
+  NiftyzoneMinter,
+  ArtzoneMinter,
+  ArtzoneMinterUpgradeable,
+} from '../typechain';
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
   return (await hre.ethers.getContractAt(abiType, address)) as CType;
@@ -187,8 +194,23 @@ async function main() {
   //   'NiftyzoneMarketplace'
   // );
 
-  // Deploy Artzone Minter Contract
-  let artzoneMinterContract = await deploy<ArtzoneMinter>(deployer, 'ArtzoneMinter', ["0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F"], true);
+  // // Deploy Artzone Minter Contract
+  // let artzoneMinterContract = await deploy<ArtzoneMinter>(
+  //   deployer,
+  //   'ArtzoneMinter',
+  //   ['0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F'],
+  //   true
+  // );
+
+  // Deploy Artzone Minter Upgradeable (UUPS) Contract
+  let artzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<ArtzoneMinterUpgradeable>(
+    deployer,
+    'ArtzoneMinterUpgradeable',
+    [],
+    ['0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F'],
+    true,
+    'ArtzoneMinterUpgradeable'
+  );
 }
 
 main()
