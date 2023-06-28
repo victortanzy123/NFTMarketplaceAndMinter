@@ -1,11 +1,11 @@
-import { expect } from "chai";
-import { utils } from "ethers";
-import { ethers, waffle } from "hardhat";
+import {expect} from 'chai';
+import {utils} from 'ethers';
+import {ethers, waffle} from 'hardhat';
 import hre from 'hardhat';
-import { deploy, evm_revert, evm_snapshot } from "./helpers/hardhat-helpers";
-import { TestContract } from "../typechain/TestContract";
+import {deploy, evm_revert, evm_snapshot} from './helpers/hardhat-helpers';
+import {TestContract} from '../typechain/TestContract';
 
-describe("TestContract", () => {
+describe('TestContract', () => {
   const [admin] = waffle.provider.getWallets();
   let globalSnapshotId;
   let snapshotId;
@@ -16,9 +16,8 @@ describe("TestContract", () => {
 
     // const testInitalised = await hre.ethers.getContractFactory("TestContract")
 
-    testContract = await deploy<TestContract>("TestContract", []);
+    testContract = await deploy<TestContract>('TestContract', []);
     // testContract = await hre.upgrades.deployProxy(testInitalised);
-
 
     snapshotId = await evm_snapshot();
   });
@@ -38,5 +37,4 @@ describe("TestContract", () => {
   //   let curTotal = await testContract.getTotal();
   //   expect(curTotal).to.be.eq(200);
   // });
-
 });

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 // Royalties Standard - EIP2981:
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
-import "./Helpers/ERC2981/ERC2981RoyaltiesPerToken.sol";
+import "../Helpers/ERC2981/ERC2981RoyaltiesPerToken.sol";
 
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 

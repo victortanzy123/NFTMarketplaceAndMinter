@@ -4,28 +4,24 @@ pragma solidity ^0.8.11;
 // import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 interface IArtzoneMinter {
-
   /*///////////////////////////////////////////////////////////////
                                 Events
     //////////////////////////////////////////////////////////////*/
   /**
    * @dev Emitted when a a new token is initialised on Artzone Minter.
    */
-    event TokenInitialisation(
-        uint256 indexed tokenId,
-        uint256 maxQuantity,
-        uint256 royaltyPercent,
-        address royaltyAddr,
-        string tokenUri
-    );
+  event TokenInitialisation(
+    uint256 indexed tokenId,
+    uint256 maxQuantity,
+    uint256 royaltyPercent,
+    address royaltyAddr,
+    string tokenUri
+  );
 
-
-     /**
+  /**
    * @dev Emitted when a a token tokenURI access has been permanently locked.
    */
-    event TokenAccessLock(
-        uint256 tokenId
-    );
+  event TokenAccessLock(uint256 tokenId);
 
   /*///////////////////////////////////////////////////////////////
                         Main Functions
@@ -46,12 +42,12 @@ interface IArtzoneMinter {
    *
    */
   function initialiseToken(
-    string memory _tokenURI, 
+    string memory _tokenURI,
     uint256 _maxQuantity,
     address _royaltyRecipient,
     uint256 _royaltyValue,
     bool _accessToUpdateToken
-    ) external;
+  ) external;
 
   /**
    *  @notice Mint token to a specified address with a specified quantity.
@@ -63,14 +59,14 @@ interface IArtzoneMinter {
    *  @param _receiver   Receiver address for token to be minted to.
    *
    */
-    function mintToken(
-        uint256 _tokenId,
-        uint256 _quantity,
-        address _receiver
-    ) external;
+  function mintToken(
+    uint256 _tokenId,
+    uint256 _quantity,
+    address _receiver
+  ) external;
 
   /**
-    * @notice Batch minting of multiple tokenIds with varying respective quantities to a receipient, permission only exclusive to whitelisted admin wallet.
+   * @notice Batch minting of multiple tokenIds with varying respective quantities to a receipient, permission only exclusive to whitelisted admin wallet.
    *
    *  @param _tokens   List of tokens to be minted in the batch.
    *
@@ -79,45 +75,46 @@ interface IArtzoneMinter {
    *  @param _receiver   Receiver address for token batch.
    *
    */
-  function batchMintToken(uint256[] memory _tokens, uint256[] memory _quantities, address _receiver) external;
+  function batchMintToken(
+    uint256[] memory _tokens,
+    uint256[] memory _quantities,
+    address _receiver
+  ) external;
 
   /**
    * @notice One way lock of locking up tokenURI update access, only permissable by admins.
    *
    *  @param _tokenId   TokenId to lock token access update.
    */
-   function lockTokenUpdateAccess(uint256 _tokenId) external;
+  function lockTokenUpdateAccess(uint256 _tokenId) external;
 
   /**
-  * @notice For admins to override existing tokenURI should it be allowed to.
+   * @notice For admins to override existing tokenURI should it be allowed to.
    *
    *  @param _tokenId   TokenId to override existing tokenURI with new one.
    *
    *  @param _newUri    New tokenURI to override existing one.
    *
    */
-  function overrideExistingURI(
-        uint256 _tokenId,
-        string memory _newUri
-    ) external;
+  function overrideExistingURI(uint256 _tokenId, string memory _newUri) external;
 
-//   /**
-//      * @notice To query creator royalties info based on ERC2981 Implementation.
-//     *
-//     * @param _tokenId    The tokenId initialised on ArtzoneMinter to be queried for.
-//     *
-//     * @param _value      The base value of sale to be calculated from.
-//    */
-//    function royaltyInfo(uint256 _tokenId, uint256 _value)
-//         external
-//         view
-//         returns (address, uint256);
+  //   /**
+  //      * @notice To query creator royalties info based on ERC2981 Implementation.
+  //     *
+  //     * @param _tokenId    The tokenId initialised on ArtzoneMinter to be queried for.
+  //     *
+  //     * @param _value      The base value of sale to be calculated from.
+  //    */
+  //    function royaltyInfo(uint256 _tokenId, uint256 _value)
+  //         external
+  //         view
+  //         returns (address, uint256);
 
-//       /**
-//     * @notice Total amount of tokens minted in with a given tokenId.
-//     *
-//     * @param _tokenId    The tokenId initialised on ArtzoneMinter to be queried for.
-//     *
-//    */
-//    function totalSupply(uint256 _tokenId) external view returns (uint256);
+  //       /**
+  //     * @notice Total amount of tokens minted in with a given tokenId.
+  //     *
+  //     * @param _tokenId    The tokenId initialised on ArtzoneMinter to be queried for.
+  //     *
+  //    */
+  //    function totalSupply(uint256 _tokenId) external view returns (uint256);
 }

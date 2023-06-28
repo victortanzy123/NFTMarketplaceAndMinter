@@ -12,19 +12,19 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract TestContract is Initializable, ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
-    function initialize() public initializer {
-        __ERC20_init("Mars", "MARS");
-        __Ownable_init();
-        _mint(msg.sender, 1000000 * 10 ** decimals());
-    }
+  function initialize() public initializer {
+    __ERC20_init("Mars", "MARS");
+    __Ownable_init();
+    _mint(msg.sender, 1000000 * 10**decimals());
+  }
 
-    // UUPS always need the _authorizeUpgrade(address newImplementation) function
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+  // UUPS always need the _authorizeUpgrade(address newImplementation) function
+  function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
 
 // UUPS Upgradeable Contract:
 contract TestContractV2 is TestContract {
-    function version() pure public returns (string memory){
-        return "V2";
-    }
+  function version() public pure returns (string memory) {
+    return "V2";
+  }
 }

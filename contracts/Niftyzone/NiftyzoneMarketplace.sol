@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradea
 
 // Supporting Contracts:
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./Helpers/BoringOwnableUpgradeable.sol";
+import "../Helpers/BoringOwnableUpgradeable.sol";
 
 // ERC165 Supported Interfaces & Royalties:
 import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
@@ -26,14 +26,14 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // Internal Imports - Meta-Transactions:
-import "./Helpers/ERC2771ContextUpgradeable.sol";
+import "../Helpers/ERC2771ContextUpgradeable.sol";
 
 // Proxy Configurations:
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 // Marketplace Interface:
-import "./Interfaces/INiftyzoneMarketplace.sol";
+import "../Interfaces/INiftyzoneMarketplace.sol";
 
 contract NiftyzoneMarketplace is
   Initializable,
@@ -55,8 +55,8 @@ contract NiftyzoneMarketplace is
   Counters.Counter public totalListings;
 
   /// @dev Marketplace Edition State Variables:
-  bytes32 private constant MODULE_TYPE = bytes32("Marketplace");
-  uint256 private constant VERSION = 2;
+  bytes32 private constant MODULE_TYPE = bytes32("MarketplaceV2");
+  uint256 private constant VERSION = 3;
 
   /// @dev The max bps of the contract. So, 10_000 == 100 %
   uint64 public constant MAX_BPS = 10_000;
@@ -349,6 +349,16 @@ contract NiftyzoneMarketplace is
 
     updatedPrice = selectedListing.price;
     updatedDeadline = selectedListing.deadline;
+
+    emit MarketItemPriceUpdate(
+      _listingId,
+      selectedListing.nftContract,
+      selectedListing.tokenId,
+      msg.sender,
+      selectedListing.currency,
+      updatedPrice,
+      updatedDeadline
+    );
   }
 
   /// @dev Need to get user to approve allowance for ERC20 token specified before offerring for marketplace to transact on offeror's behalf. Each new offer fom the same address on the same listing will override the older one.

@@ -8,6 +8,7 @@ import {
   NiftyzoneMinter,
   ArtzoneMinter,
   ArtzoneMinterUpgradeable,
+  NiftyzoneMinterUpgradeable,
 } from '../typechain';
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
@@ -184,7 +185,7 @@ async function main() {
   // // Deploy Niftyzone Minter Contract
   // let minterContract = await deploy<NiftyzoneMinter>(deployer, 'NiftyzoneMinter', [], true);
 
-  // // Deploy Niftyzone Marketplace (UUPS) Contract
+  // Deploy Niftyzone Marketplace (UUPS) Contract
   // let marketplaceContract = await deployUUPSUpgradableContract<NiftyzoneMarketplace>(
   //   deployer,
   //   'NiftyzoneMarketplace',
@@ -192,6 +193,16 @@ async function main() {
   //   [[]],
   //   true,
   //   'NiftyzoneMarketplace'
+  // );
+
+  // // Upgrade NiftyzoneMarketplace Contract.
+  // let upgradedMarketplaceContract = await upgradeUUPSUpgradeableContract(
+  //   deployer,
+  //   'NiftyzoneMarketplace',
+  //   '0x2B7DBE2Ec5b2bcf35Ba2372d219A2731f2bB7888',
+  //   '0x26E6aDf232455B4AeD8F464576fe37A20B76aE47',
+  //   true,
+  //   'NiftyzoneMarketplaceV3'
   // );
 
   // // Deploy Artzone Minter Contract
@@ -202,15 +213,32 @@ async function main() {
   //   true
   // );
 
-  // Deploy Artzone Minter Upgradeable (UUPS) Contract
-  let artzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<ArtzoneMinterUpgradeable>(
+  // // Deploy Artzone Minter Upgradeable (UUPS) Contract
+  // let artzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<ArtzoneMinterUpgradeable>(
+  //   deployer,
+  //   'ArtzoneMinterUpgradeable',
+  //   [],
+  //   [
+  //     [
+  //       '0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F',
+  //       '0x29A768F1688722EcbCCa3c11C1dE41FF314265bD',
+  //       '0x1D7e965D07a740FEd34D3Fb39805A7AFd121F34e',
+  //     ],
+  //   ],
+  //   true,
+  //   'ArtzoneMinterUpgradeable'
+  // );
+
+  let niftyzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<NiftyzoneMinterUpgradeable>(
     deployer,
-    'ArtzoneMinterUpgradeable',
+    'NiftyzoneMinterUpgradeable',
     [],
-    ['0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F'],
+    [],
     true,
-    'ArtzoneMinterUpgradeable'
+    'NiftyzoneMinterUpgradeable'
   );
+
+  // await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
 }
 
 main()

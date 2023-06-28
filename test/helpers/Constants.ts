@@ -1,4 +1,4 @@
-import { BigNumber, constants } from "ethers";
+import {BigNumber, constants} from 'ethers';
 
 export const _1E18 = BigNumber.from(10).pow(18);
 export const ZERO_ADDRESS = constants.AddressZero;

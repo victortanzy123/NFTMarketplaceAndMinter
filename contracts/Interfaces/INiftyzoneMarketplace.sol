@@ -90,7 +90,8 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     uint256 tokenid,
     address indexed seller,
     address currency,
-    uint256 newPrice
+    uint256 updatedPrice,
+    uint256 updatedDeadline
   );
 
   /**

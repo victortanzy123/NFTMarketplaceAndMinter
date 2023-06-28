@@ -79,7 +79,7 @@ const config: HardhatUserConfig = {
     },
     bsc: {
       url: `https://bsc-dataseed.binance.org/`,
-      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      accounts: [`${process.env.PRIVATE_KEY_BSC || dummyPrivateKey}`],
       gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
@@ -97,6 +97,12 @@ const config: HardhatUserConfig = {
     },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`,
+      accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
+      gasPrice: 30 * 1000000000,
+      timeout: 200000,
+    },
+    bscTestnet: {
+      url: `https://data-seed-prebsc-1-s2.binance.org:8545`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
       gasPrice: 30 * 1000000000,
       timeout: 200000,
@@ -120,6 +126,7 @@ const config: HardhatUserConfig = {
       rinkeby: process.env.ETHERSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       bsc: process.env.BSCSCAN_API_KEY,
+      bscTestnet: process.env.BSCSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
     },
   },
