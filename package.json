@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "test": "yarn hardhat test",
-    "run": "yarn hardhat run",
+    "run": "npx hardhat run",
     "coverage": "yarn hardhat coverage --testfiles ",
     "test-no-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat test --no-compile",
     "first-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat typechain",

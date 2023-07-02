@@ -163,6 +163,9 @@ contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
     override(ERC1155, ERC2981Support)
     returns (bool)
   {
-    return ERC1155.supportsInterface(interfaceId) || ERC2981Support.supportsInterface(interfaceId);
+    return
+      ERC1155.supportsInterface(interfaceId) ||
+      ERC2981Support.supportsInterface(interfaceId) ||
+      super.supportsInterface(interfaceId);
   }
 }

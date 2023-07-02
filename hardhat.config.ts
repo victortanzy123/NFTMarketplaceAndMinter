@@ -89,12 +89,6 @@ const config: HardhatUserConfig = {
       gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECTID}`,
-      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
-      timeout: 200000,
-    },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],

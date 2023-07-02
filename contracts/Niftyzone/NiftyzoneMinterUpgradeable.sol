@@ -39,7 +39,7 @@ contract NiftyzoneMinterUpgradeable is
     __BoringOwnable_init();
   }
 
-    /*///////////////////////////////////////////////////////////////
+  /*///////////////////////////////////////////////////////////////
                             Main Functions
     //////////////////////////////////////////////////////////////*/
 
@@ -102,12 +102,19 @@ contract NiftyzoneMinterUpgradeable is
     _tokenUpdateAccess[_id] = false;
   }
 
-  function overrideExistingURIByAdmin(uint256 _tokenId, string memory _newUri) external override onlyOwner {
+  function overrideExistingURIByAdmin(uint256 _tokenId, string memory _newUri)
+    external
+    override
+    onlyOwner
+  {
     require(_tokenUpdateAccess[_tokenId], "Permissions to update tokenUri denied.");
     _setUri(_tokenId, _newUri);
   }
 
-  function overrideExistingURIByCreator(uint256 _tokenId, string memory _newUri) external override {
+  function overrideExistingURIByCreator(uint256 _tokenId, string memory _newUri)
+    external
+    override
+  {
     require(msg.sender == _tokenCreator[_tokenId], "Unauthorised, not creator.");
     require(_tokenUpdateAccess[_tokenId], "Permissions to update denied.");
     _setUri(_tokenId, _newUri);
@@ -117,7 +124,7 @@ contract NiftyzoneMinterUpgradeable is
                             View Functions
     //////////////////////////////////////////////////////////////*/
 
-    function uri(uint256 _id) public view virtual override returns (string memory) {
+  function uri(uint256 _id) public view virtual override returns (string memory) {
     return _tokenIdToURI[_id];
   }
 
