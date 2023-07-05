@@ -8,9 +8,9 @@ interface IPermissionControl is IERC165 {
   event PermissionRevoked(address indexed oldAdmin, address indexed assigner);
 
   /**
-   * @dev gets address of all admins
+   * @dev gets address of all approved admins.
    */
-  function getAllAdmins() external view returns (address[] memory);
+  function getAllPermissionedUsers() external view returns (address[] memory);
 
   /**
    * @dev add an admin.  Can only be called by contract owner.
@@ -23,7 +23,7 @@ interface IPermissionControl is IERC165 {
   function revokePermission(address admin) external;
 
   /**
-   * @dev checks whether or not given address is an admin
+   * @dev checks whether or not given address is an admin, which includes owner
    * Returns True if they are
    */
   function isPermissionedUser(address admin) external view returns (bool);

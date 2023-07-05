@@ -3,6 +3,7 @@ import {BigNumber, Contract} from 'ethers';
 import hre from 'hardhat';
 import {
   TestContract,
+  ArtzoneCreator,
   ERC1967Proxy,
   NiftyzoneMarketplace,
   NiftyzoneMinter,
@@ -238,7 +239,7 @@ async function main() {
   //   'NiftyzoneMinterUpgradeable'
   // );
 
-  await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
+  // await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
 }
 
 main()

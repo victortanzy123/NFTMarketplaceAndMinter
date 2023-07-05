@@ -116,7 +116,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   }
 
   /**
-   * @dev Set token uri for a token with no extension
+   * @dev Set token uri for an existing TokenId.
    */
   function _setTokenURI(uint256 tokenId, string calldata uri)
     internal
@@ -146,7 +146,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   }
 
   /**
-   * @dev Retrieve a token's URI
+   * @dev Retrieve an existing token's URI
    */
   function _tokenURI(uint256 tokenId)
     internal
@@ -221,6 +221,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
    */
   function _getRoyalties(uint256 tokenId)
     internal
+    isExistingToken(tokenId)
     view
     returns (address payable[] memory receivers, uint256[] memory bps)
   {

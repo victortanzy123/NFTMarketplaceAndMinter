@@ -12,7 +12,7 @@ abstract contract PermissionControl is IPermissionControl, BoringOwnable, ERC165
   EnumerableSet.AddressSet private _permissionedUsers;
 
   /**
-   * @dev Only allows approved admins to call the specified function
+   * @dev Only allows approved admins or owner to call the specified function
    */
   modifier onlyPermissionedUser() {
     require(
@@ -39,7 +39,7 @@ abstract contract PermissionControl is IPermissionControl, BoringOwnable, ERC165
   /**
    * @dev See {IAdminControl-getAdmins}.
    */
-  function getAllAdmins() external view override returns (address[] memory permissionedUsers) {
+  function getAllPermissionedUsers() external view override returns (address[] memory permissionedUsers) {
     permissionedUsers = new address[](_permissionedUsers.length());
     for (uint256 i = 0; i < _permissionedUsers.length(); i++) {
       permissionedUsers[i] = _permissionedUsers.at(i);
