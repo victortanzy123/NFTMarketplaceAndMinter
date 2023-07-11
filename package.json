@@ -19,6 +19,7 @@
   "author": "",
   "license": "AGPL-3.0",
   "dependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.19.0",
     "hardhat": "^2.9.6",

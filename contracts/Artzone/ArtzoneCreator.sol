@@ -8,6 +8,19 @@ import "../Helpers/Permissions/PermissionControl.sol";
 contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionControl {
   constructor(string memory _name, string memory _symbol) ERC1155CreatorBase(_name, _symbol) {}
 
+  modifier checkTokenClaimable(uint256 tokenId, address user) {
+    TokenClaimType claimStatus = _tokenMetadata[tokenId].claimStatus;
+    if (isPermissionedUser(user)) {
+      require(
+        claimStatus == TokenClaimType.PUBLIC || claimStatus == TokenClaimType.ADMIN,
+        "Token claim disabled"
+      );
+    } else {
+      require(claimStatus == TokenClaimType.PUBLIC, "Public token claim disabled");
+    }
+    _;
+  }
+
   /**
    * @dev See {IArtzoneCreator-initialiseNewSingleToken}.
    */
@@ -50,8 +63,11 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
     require(amount > 0, "Invalid amount");
 
     tokenId = ++_tokenCount;
-    _tokenSupply[tokenId] = amount;
-    _tokenURIs[tokenId] = uri;
+
+    TokenMetadataConfig storage metadataConfig = _tokenMetadata[tokenId];
+    metadataConfig.maxSupply = amount;
+    metadataConfig.uri = uri;
+    metadataConfig.claimStatus = TokenClaimType.ADMIN;
 
     emit TokenInitialised(tokenId, amount, uri, msg.sender);
   }
@@ -111,6 +127,16 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   }
 
   /**
+   * @dev See {IArtzoneCreator-mintExistingSingleToken}.
+   */
+  function mintExistingSingleToken(uint256 tokenId, uint256 amount)
+    external
+    checkTokenClaimable(tokenId, msg.sender)
+  {
+    _mintExistingToken(tokenId, msg.sender, amount);
+  }
+
+  /**
    * @dev See {IArtzoneCreator-mintExistingMultipleToken}.
    */
   function mintExistingMultipleTokens(
@@ -133,15 +159,39 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   }
 
   /**
+   * @dev See {IArtzoneCreator-mintExistingMultipleToken}.
+   */
+  function mintExistingMultipleTokens(uint256[] calldata tokenIds, uint256[] calldata amounts)
+    external
+    onlyPermissionedUser
+  {
+    require(tokenIds.length == amounts.length, "Invalid inputs");
+    uint256 length = tokenIds.length;
+
+    for (uint256 i = 0; i < length; ) {
+      _mintExistingToken(tokenIds[i], msg.sender, amounts[i]);
+      unchecked {
+        i++;
+      }
+    }
+  }
+
+  /**
    * @dev See {IArtzoneCreator-_mintExistingToken}.
    */
   function _mintExistingToken(
     uint256 tokenId,
     address receiver,
     uint256 amount
-  ) internal {
+  ) internal checkTokenClaimable(tokenId, msg.sender) {
     require(tokenId <= _tokenCount, "Invalid tokenId specified");
     require(amount > 0, "Invalid mint amount specified");
+    require(
+      _tokenMetadata[tokenId].totalSupply + amount <= _tokenMetadata[tokenId].maxSupply,
+      "Invalid amount specified"
+    );
+
+    _tokenMetadata[tokenId].totalSupply += amount;
     _mint(receiver, tokenId, amount, "");
 
     emit TokenMint(tokenId, amount, receiver, msg.sender);
@@ -154,8 +204,32 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
     external
     virtual
     override(ERC1155CreatorBase, IERC1155CreatorBase)
+    onlyPermissionedUser
   {
     _setTokenURI(tokenId, uri);
+  }
+
+  /**
+   * @dev Set token uri after a token is minted by permissioned user.
+   */
+  function updateTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus)
+    external
+    virtual
+    override(ERC1155CreatorBase, IERC1155CreatorBase)
+    onlyPermissionedUser
+  {
+    _setTokenClaimStatus(tokenId, claimStatus);
+  }
+
+  /**
+   * @dev Set secondary royalties for a particular tokenId by permissioned user.
+   */
+  function setRoyalties(
+    uint256 tokenId,
+    address payable[] calldata receivers,
+    uint256[] calldata basisPoints
+  ) external override(ERC1155CreatorBase, IERC1155CreatorBase) onlyPermissionedUser {
+    _setRoyalties(tokenId, receivers, basisPoints);
   }
 
   /**

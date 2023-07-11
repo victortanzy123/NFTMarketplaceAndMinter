@@ -242,7 +242,12 @@ async function main() {
   // await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
 
   // // Deploy Niftyzone Minter Contract
-  await deploy<ArtzoneCreator>(deployer, 'ArtzoneCreator', ["Artzone Collections", "Artzone Collections"], true);
+  await deploy<ArtzoneCreator>(
+    deployer,
+    'ArtzoneCreator',
+    ['Artzone Collections Test', 'Artzone Collections Test'],
+    true
+  );
 }
 
 main()

@@ -22,15 +22,11 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
 
   uint256 internal _tokenCount = 0;
 
-  struct RoyaltyConfig {
-    address payable receiver;
-    uint16 bps;
-  }
-
-  mapping(uint256 => uint256) internal _tokenSupply;
-  // Mapping for individual token URIs
-  mapping(uint256 => string) internal _tokenURIs;
-  mapping(uint256 => RoyaltyConfig[]) internal _tokenRoyalty;
+  mapping(uint256 => TokenMetadataConfig) internal _tokenMetadata;
+  // mapping(uint256 => uint256) internal _tokenSupply;
+  // // Mapping for individual token URIs
+  // mapping(uint256 => string) internal _tokenURIs;
+  // mapping(uint256 => RoyaltyConfig[]) internal _tokenRoyalty;
 
   bytes4 private constant ERC1155_CREATORBASE_V1 = 0x28f10a21;
 
@@ -116,21 +112,52 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   }
 
   /**
-   * @dev Set token uri for an existing TokenId.
+   * @dev See {IERC1155CreatorBase-updateTokenClaimStatus}.
+   */
+  function updateTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus) external virtual {
+    _setTokenClaimStatus(tokenId, claimStatus);
+  }
+
+  /**
+   * @dev See {IERC1155CreatorBase-updateTokenURI}.
+   */
+  function setRoyalties(
+    uint256 tokenId,
+    address payable[] calldata receivers,
+    uint256[] calldata basisPoints
+  ) external virtual {
+    _setRoyalties(tokenId, receivers, basisPoints);
+  }
+
+  /**
+   * @dev Set token uri for an existing tokenId.
    */
   function _setTokenURI(uint256 tokenId, string calldata uri)
     internal
     virtual
     isExistingToken(tokenId)
   {
-    _tokenURIs[tokenId] = uri;
+    _tokenMetadata[tokenId].uri = uri;
+  }
+
+  /**
+   * @dev Set claim status for an existing tokenId.
+   */
+  function _setTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus)
+    internal
+    virtual
+    isExistingToken(tokenId)
+  {
+    _tokenMetadata[tokenId].claimStatus = claimStatus;
+
+    emit TokenClaimStatusUpdate(tokenId, claimStatus);
   }
 
   /**
    * @dev See {IERC1155MetadataURI-uri}.
    */
   function uri(uint256 id) external view returns (string memory tokenURI) {
-    tokenURI = _tokenURIs[id];
+    tokenURI = _tokenURI(id);
   }
 
   /**
@@ -140,9 +167,42 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     external
     view
     isExistingToken(tokenId)
-    returns (uint256 supply)
+    returns (uint256 totalSupply)
   {
-    supply = _tokenSupply[tokenId];
+    totalSupply = _tokenMetadata[tokenId].totalSupply;
+  }
+
+  /**
+   * @dev See {IERC1155CreatorBase-maxSupply}.
+   */
+  function maxSupply(uint256 tokenId)
+    external
+    view
+    isExistingToken(tokenId)
+    returns (uint256 maxSupply)
+  {
+    maxSupply = _tokenMetadata[tokenId].maxSupply;
+  }
+
+  /**
+   * @dev See {IERC1155CreatorBase-tokenMetadata}.
+   */
+  function tokenMetadata(uint256 tokenId)
+    external
+    view
+    isExistingToken(tokenId)
+    returns (
+      uint256 totalSupply,
+      uint256 maxSupply,
+      string memory uri,
+      TokenClaimType claimStatus
+    )
+  {
+    TokenMetadataConfig memory tokenMetadata = _tokenMetadata[tokenId];
+    totalSupply = tokenMetadata.totalSupply;
+    maxSupply = tokenMetadata.maxSupply;
+    uri = tokenMetadata.uri;
+    claimStatus = tokenMetadata.claimStatus;
   }
 
   /**
@@ -152,9 +212,9 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     internal
     view
     isExistingToken(tokenId)
-    returns (string memory)
+    returns (string memory uri)
   {
-    return _tokenURIs[tokenId];
+    uri = _tokenMetadata[tokenId].uri;
   }
 
   /**
@@ -221,11 +281,11 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
    */
   function _getRoyalties(uint256 tokenId)
     internal
-    isExistingToken(tokenId)
     view
+    isExistingToken(tokenId)
     returns (address payable[] memory receivers, uint256[] memory bps)
   {
-    RoyaltyConfig[] memory royalties = _tokenRoyalty[tokenId];
+    RoyaltyConfig[] memory royalties = _tokenMetadata[tokenId].royalties;
 
     if (royalties.length == 0) {
       receivers = new address payable[](1);
@@ -288,8 +348,8 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     uint256[] calldata basisPoints
   ) internal {
     _checkRoyalties(receivers, basisPoints);
-    delete _tokenRoyalty[tokenId];
-    _setRoyalties(receivers, basisPoints, _tokenRoyalty[tokenId]);
+    delete _tokenMetadata[tokenId].royalties;
+    _setRoyalties(receivers, basisPoints, _tokenMetadata[tokenId].royalties);
     emit RoyaltiesUpdated(tokenId, receivers, basisPoints);
   }
 

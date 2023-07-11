@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {utils} from 'ethers';
 import {ethers, waffle} from 'hardhat';
 import hre from 'hardhat';
-import {deploy, evm_revert, evm_snapshot} from './helpers/hardhat-helpers';
+import {deploy, evm_revert, evm_snapshot} from '../helpers/hardhat-helpers';
 import {TestContract} from '../typechain/TestContract';
 
 describe('TestContract', () => {

@@ -39,7 +39,12 @@ abstract contract PermissionControl is IPermissionControl, BoringOwnable, ERC165
   /**
    * @dev See {IAdminControl-getAdmins}.
    */
-  function getAllPermissionedUsers() external view override returns (address[] memory permissionedUsers) {
+  function getAllPermissionedUsers()
+    external
+    view
+    override
+    returns (address[] memory permissionedUsers)
+  {
     permissionedUsers = new address[](_permissionedUsers.length());
     for (uint256 i = 0; i < _permissionedUsers.length(); i++) {
       permissionedUsers[i] = _permissionedUsers.at(i);

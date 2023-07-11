@@ -49,7 +49,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   ) external returns (uint256[] memory);
 
   /**
-   * @dev Mints existing single token.  Can only be called by owner/admin. Returns tokenId assigned.
+   * @dev Mints existing single token.  Can only be called by any user. Returns tokenId assigned.
    */
   function mintExistingSingleToken(
     address receiver,
@@ -58,11 +58,22 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   ) external;
 
   /**
-   * @dev Mints multiple tokens.  Can only be called by owner/admin. Returns tokenId assigned.
+   * @dev Mints existing single token for owneself.  Can only be called by any user. Returns tokenId assigned.
+   */
+  function mintExistingSingleToken(uint256 tokenId, uint256 amount) external;
+
+  /**
+   * @dev Mints multiple tokens.  Can only be called by any user. Returns tokenId assigned.
    */
   function mintExistingMultipleTokens(
     address[] calldata receivers,
     uint256[] calldata tokenIds,
     uint256[] calldata amounts
   ) external;
+
+  /**
+   * @dev Mints multiple tokens for ownself.  Can only be called by any user. Returns tokenId assigned.
+   */
+  function mintExistingMultipleTokens(uint256[] calldata tokenIds, uint256[] calldata amounts)
+    external;
 }
