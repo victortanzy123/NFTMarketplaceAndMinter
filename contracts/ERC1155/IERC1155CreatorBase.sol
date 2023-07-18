@@ -18,6 +18,7 @@ interface IERC1155CreatorBase is IRoyalties {
   struct TokenMetadataConfig {
     uint256 totalSupply;
     uint256 maxSupply;
+    uint256 price;
     string uri;
     RoyaltyConfig[] royalties;
     TokenClaimType claimStatus;
@@ -45,6 +46,11 @@ interface IERC1155CreatorBase is IRoyalties {
   function updateTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus) external;
 
   /**
+   * @dev Update token public minting price.
+   */
+  function updateTokenMintPrice(uint256 tokenId, uint256 newPrice) external;
+
+  /**
    * @dev Total amount of tokens in with a given tokenId.
    */
   function totalSupply(uint256 tokenId) external view returns (uint256);
@@ -55,12 +61,18 @@ interface IERC1155CreatorBase is IRoyalties {
   function maxSupply(uint256 tokenId) external view returns (uint256);
 
   /**
+   * @dev Price to mint a given initialised tokenId.
+   */
+  function publicMintPrice(uint256 tokenId) external view returns (uint256);
+
+  /**
    * @dev Returns TokenMetadataConfig specified by a tokenId.
    */
   function tokenMetadata(uint256 tokenId)
     external
     view
     returns (
+      uint256,
       uint256,
       uint256,
       string memory,

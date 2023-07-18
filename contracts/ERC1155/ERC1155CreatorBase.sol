@@ -141,6 +141,17 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   }
 
   /**
+   * @dev Set new public mint price for an existing tokenId.
+   */
+  function _setTokenMintPrice(uint256 tokenId, uint256 newPrice)
+    internal
+    virtual
+    isExistingToken(tokenId)
+  {
+    _tokenMetadata[tokenId].price = newPrice;
+  }
+
+  /**
    * @dev Set claim status for an existing tokenId.
    */
   function _setTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus)
@@ -185,6 +196,25 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   }
 
   /**
+   * @dev See {IERC1155CreatorBase-publicMintPrice}.
+   */
+  function publicMintPrice(uint256 tokenId)
+    external
+    view
+    isExistingToken(tokenId)
+    returns (uint256 mintPrice)
+  {
+    mintPrice = _tokenMetadata[tokenId].price;
+  }
+
+  /**
+   * @dev See {IERC1155CreatorBase-publicMintPrice}.
+   */
+  function updateTokenMintPrice(uint256 tokenId, uint256 newPrice) external {
+    _tokenMetadata[tokenId].price = newPrice;
+  }
+
+  /**
    * @dev See {IERC1155CreatorBase-tokenMetadata}.
    */
   function tokenMetadata(uint256 tokenId)
@@ -194,6 +224,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     returns (
       uint256 totalSupply,
       uint256 maxSupply,
+      uint256 mintPrice,
       string memory uri,
       TokenClaimType claimStatus
     )
@@ -201,6 +232,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     TokenMetadataConfig memory tokenMetadata = _tokenMetadata[tokenId];
     totalSupply = tokenMetadata.totalSupply;
     maxSupply = tokenMetadata.maxSupply;
+    mintPrice = tokenMetadata.price;
     uri = tokenMetadata.uri;
     claimStatus = tokenMetadata.claimStatus;
   }
