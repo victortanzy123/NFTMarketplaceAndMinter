@@ -12,13 +12,24 @@ interface IArtzoneCreator is IERC1155CreatorBase {
     uint256 maxSupply,
     uint256 price,
     string tokenUri,
-    address
+    address revenueReceipient
   );
 
   /**
    * @dev Event when an Initialised Token has been minted.
    */
-  event TokenMint(uint256 indexed tokenId, uint256 amount, address receiver, address minter);
+  event TokenMint(
+    uint256 indexed tokenId,
+    uint256 amount,
+    address receiver,
+    address minter,
+    uint256 value
+  );
+
+  /**
+   * @dev Event when a revenue receipient of an initialised token has been updated.
+   */
+  event TokenRevenueReceipientUpdate(uint256 indexed tokenId, address revenueReceipient);
 
   /**
    * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted.  Can only be called by owner/admin. Returns tokenId assigned.
@@ -26,7 +37,8 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   function initialiseNewSingleToken(
     uint256 amount,
     uint256 price,
-    string calldata uri
+    string calldata uri,
+    address revenueReceipient
   ) external returns (uint256);
 
   /**
@@ -35,29 +47,8 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   function initialiseNewMultipleTokens(
     uint256[] calldata amounts,
     uint256[] calldata prices,
-    string[] calldata uris
-  ) external returns (uint256[] memory);
-
-  /**
-   * @dev Initialise and mints a single token.  Can only be called by owner/admin. Returns tokenId assigned.
-   */
-  function initialiseAndMintNewSingleToken(
-    address receiver,
-    uint256 maxAmount,
-    uint256 price,
-    uint256 mintAmount,
-    string calldata uri
-  ) external returns (uint256);
-
-  /**
-   * @dev Initialise and mints multiple tokens.  Can only be called by owner/admin. Returns array of tokenIds assigned.
-   */
-  function initialiseAndMintNewMultipleTokens(
-    address[] calldata receivers,
-    uint256[] calldata maxAmounts,
-    uint256[] calldata prices,
-    uint256[] calldata mintAmounts,
-    string[] calldata uris
+    string[] calldata uris,
+    address[] calldata revenueReceipients
   ) external returns (uint256[] memory);
 
   /**
@@ -91,12 +82,12 @@ interface IArtzoneCreator is IERC1155CreatorBase {
     payable;
 
   /**
-   * @dev Returns the total revenue collected from public minting of a tokenId.
+   * @dev Update revenue receipient for an initialised token. Can only be called by Admin.
    */
-  function revenue(uint256 tokenId) external view returns (uint256);
+  function updateTokenRevenueReceipient(uint256 tokenId, address newReceipient) external;
 
   /**
-   * @dev Withdraws total accumulated revenue by public minting of an existing token.  Can only be called by permissioned user.
+   * @dev Update Artzone Minter fee basis points for NFT minting sale. Can only be called by Admin.
    */
-  function withdrawTokenRevenue(uint256 tokenId, address payable receiver) external payable;
+  function updateArtzoneFeeBps(uint256 bps) external;
 }

@@ -245,7 +245,7 @@ async function main() {
   await deploy<ArtzoneCreator>(
     deployer,
     'ArtzoneCreator',
-    ['Artzone Collections Test', 'Artzone Collections Test'],
+    ['Artzone Collections Test', 'Artzone Collections Test', 100], // 1%
     true
   );
 }

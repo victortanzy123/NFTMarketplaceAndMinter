@@ -6,19 +6,28 @@ import "./IArtzoneCreator.sol";
 import "../Helpers/Permissions/PermissionControl.sol";
 
 contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionControl {
-  mapping(uint256 => uint256) internal _tokenRevenue;
+  uint64 public constant MAX_BPS = 10_000;
+  uint256 public ARTZONE_MINTER_FEE_BPS;
 
-  constructor(string memory _name, string memory _symbol) ERC1155CreatorBase(_name, _symbol) {}
+  mapping(uint256 => address) internal _tokenRevenueRecipient;
+
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    uint256 feeBps_
+  ) ERC1155CreatorBase(_name, _symbol) {
+    ARTZONE_MINTER_FEE_BPS = feeBps_;
+  }
 
   modifier checkTokenClaimable(uint256 tokenId, address user) {
     TokenClaimType claimStatus = _tokenMetadata[tokenId].claimStatus;
     if (isPermissionedUser(user)) {
       require(
         claimStatus == TokenClaimType.PUBLIC || claimStatus == TokenClaimType.ADMIN,
-        "Token claim disabled"
+        "Token mint disabled"
       );
     } else {
-      require(claimStatus == TokenClaimType.PUBLIC, "Public token claim disabled");
+      require(claimStatus == TokenClaimType.PUBLIC, "Token public mint disabled");
     }
     _;
   }
@@ -29,9 +38,10 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   function initialiseNewSingleToken(
     uint256 amount,
     uint256 price,
-    string calldata uri
+    string calldata uri,
+    address revenueReceipient
   ) external onlyPermissionedUser returns (uint256 tokenId) {
-    tokenId = _initialiseToken(amount, price, uri);
+    tokenId = _initialiseToken(amount, price, uri, revenueReceipient);
   }
 
   /**
@@ -40,14 +50,20 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   function initialiseNewMultipleTokens(
     uint256[] calldata amounts,
     uint256[] calldata prices,
-    string[] calldata uris
+    string[] calldata uris,
+    address[] calldata revenueReceipients
   ) external onlyPermissionedUser returns (uint256[] memory tokenIds) {
-    require(amounts.length == uris.length, "Invalid inputs");
+    require(
+      amounts.length == prices.length &&
+        prices.length == uris.length &&
+        uris.length == revenueReceipients.length,
+      "Invalid inputs"
+    );
     uint256 length = amounts.length;
     tokenIds = new uint256[](length);
 
     for (uint256 i = 0; i < length; ) {
-      uint256 tokenId = _initialiseToken(amounts[i], prices[i], uris[i]);
+      uint256 tokenId = _initialiseToken(amounts[i], prices[i], uris[i], revenueReceipients[i]);
       tokenIds[i] = tokenId;
       unchecked {
         i++;
@@ -61,7 +77,8 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   function _initialiseToken(
     uint256 amount,
     uint256 price,
-    string calldata uri
+    string calldata uri,
+    address revenueReceipient
   ) internal returns (uint256 tokenId) {
     require(amount > 0, "Invalid amount");
 
@@ -73,52 +90,9 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
     metadataConfig.uri = uri;
     metadataConfig.claimStatus = TokenClaimType.ADMIN;
 
-    emit TokenInitialised(tokenId, amount, price, uri, msg.sender);
-  }
+    _tokenRevenueRecipient[tokenId] = revenueReceipient;
 
-  /**
-   * @dev See {IArtzoneCreator-initialiseAndMintNewSingleToken}.
-   */
-  function initialiseAndMintNewSingleToken(
-    address receiver,
-    uint256 maxAmount,
-    uint256 price,
-    uint256 mintAmount,
-    string calldata uri
-  ) external onlyPermissionedUser returns (uint256 tokenId) {
-    require(mintAmount <= maxAmount, "Mint amount must be less or equal to maxAmount");
-    tokenId = _initialiseToken(maxAmount, price, uri);
-    _mintExistingToken(tokenId, receiver, mintAmount);
-  }
-
-  /**
-   * @dev See {IArtzoneCreator-initialiseAndMintNewMultipleToken}.
-   */
-  function initialiseAndMintNewMultipleTokens(
-    address[] calldata receivers,
-    uint256[] calldata maxAmounts,
-    uint256[] calldata prices,
-    uint256[] calldata mintAmounts,
-    string[] calldata uris
-  ) external onlyPermissionedUser returns (uint256[] memory tokenIds) {
-    require(
-      receivers.length == maxAmounts.length &&
-        maxAmounts.length == mintAmounts.length &&
-        mintAmounts.length == uris.length,
-      "Invalid inputs"
-    );
-    uint256 length = receivers.length;
-    tokenIds = new uint256[](length);
-
-    for (uint256 i = 0; i < length; ) {
-      uint256 tokenId = _initialiseToken(maxAmounts[i], prices[i], uris[i]);
-      _mintExistingToken(tokenId, receivers[i], mintAmounts[i]);
-      tokenIds[i] = tokenId;
-
-      unchecked {
-        i++;
-      }
-    }
+    emit TokenInitialised(tokenId, amount, price, uri, revenueReceipient);
   }
 
   /**
@@ -195,14 +169,18 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
     );
 
     uint256 mintPrice = _tokenMetadata[tokenId].price;
+    uint256 totalPayableAmount = 0;
     if (!isPermissionedUser(msg.sender) && mintPrice > 0) {
-      require(msg.value == mintPrice, "Unmatched value sent");
-      _tokenRevenue[tokenId] += msg.value;
-      payable(msg.sender).transfer(_tokenMetadata[tokenId].price);
+      totalPayableAmount = mintPrice * amount;
+      require(msg.value == totalPayableAmount, "Unmatched value sent");
+
+      uint256 artzoneFee = (totalPayableAmount * ARTZONE_MINTER_FEE_BPS) / MAX_BPS;
+      payable(address(this)).transfer(artzoneFee);
+      payable(_tokenRevenueRecipient[tokenId]).transfer(totalPayableAmount);
     }
     _tokenMetadata[tokenId].totalSupply += amount;
 
-    emit TokenMint(tokenId, amount, receiver, msg.sender);
+    emit TokenMint(tokenId, amount, receiver, msg.sender, totalPayableAmount);
   }
 
   /**
@@ -241,30 +219,25 @@ contract ArtzoneCreator is ERC1155CreatorBase, IArtzoneCreator, PermissionContro
   }
 
   /**
-   * @dev See {IArtzoneCreator-revenue}.
+   * @dev See {IArtzoneCreator-updateTokenRevenueReceipient}.
    */
-  function revenue(uint256 tokenId)
+  function updateTokenRevenueReceipient(uint256 tokenId, address newReceipient)
     external
-    view
-    isExistingToken(tokenId)
-    returns (uint256 amount)
-  {
-    amount = _tokenRevenue[tokenId];
-  }
-
-  /**
-   * @dev See {IArtzoneCreator-withdrawTokenRevenue}.
-   */
-  function withdrawTokenRevenue(uint256 tokenId, address payable receiver)
-    external
-    payable
     isExistingToken(tokenId)
     onlyPermissionedUser
   {
-    uint256 amount = _tokenRevenue[tokenId];
-    require(amount > 0, "Amount is 0");
-    _tokenRevenue[tokenId] = 0;
-    payable(receiver).transfer(_tokenRevenue[tokenId]);
+    require(newReceipient != address(0), "Null address");
+    _tokenRevenueRecipient[tokenId] = newReceipient;
+
+    emit TokenRevenueReceipientUpdate(tokenId, newReceipient);
+  }
+
+  /**
+   * @dev See {IArtzoneCreator-updateArtzoneFeeBps}.
+   */
+  function updateArtzoneFeeBps(uint256 bps) external onlyPermissionedUser {
+    require(bps < MAX_BPS, "Invalid basis points");
+    ARTZONE_MINTER_FEE_BPS = bps;
   }
 
   /**
