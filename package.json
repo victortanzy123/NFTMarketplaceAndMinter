@@ -9,7 +9,7 @@
     "run": "npx hardhat run",
     "coverage": "yarn hardhat coverage --testfiles ",
     "test-no-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat test --no-compile",
-    "deploy:bsc-testnet" : "npx hardhat run --network bscTestnet test/deploy.ts",
+    "deploy:bsc-testnet": "npx hardhat run --network bscTestnet test/deploy.ts",
     "first-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat typechain",
     "compile": "yarn hardhat compile",
     "fcompile": "yarn hardhat clean && yarn hardhat compile",
@@ -23,6 +23,8 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.19.0",
+    "@uniswap/v3-periphery": "^1.0.1",
+    "@uniswap/v3-sdk": "^3.9.0",
     "hardhat": "^2.9.6",
     "node-fetch": "^3.2.4"
   },
