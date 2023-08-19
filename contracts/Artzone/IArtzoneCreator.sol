@@ -11,6 +11,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
     uint256 indexed tokenId,
     uint256 maxSupply,
     uint256 price,
+    uint256 maxClaimPerUser,
     string tokenUri,
     address revenueRecipient
   );
@@ -32,12 +33,21 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   event TokenRevenueRecipientUpdate(uint256 indexed tokenId, address revenueRecipient);
 
   /**
-   * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted.  Can only be called by owner/admin. Returns tokenId assigned.
+   * @dev Set the parameters for a free claim tokenId - tokenUri and maximum amount to be minted.  Returns tokenId assigned.
+   */
+  function initialiseNewFreeSingleToken(
+    uint256 maxSupply,
+    uint256 maxClaimPerUser,
+    string calldata uri,
+    TokenClaimType initialClaimStatus
+  ) external returns (uint256);
+
+
+  /**
+   * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted. Returns tokenId assigned.
    */
   function initialiseNewSingleToken(
-    uint256 amount,
-    uint256 price,
-    string calldata uri,
+    TokenMetadataConfig calldata tokenConfig,
     address revenueRecipient
   ) external returns (uint256);
 
@@ -45,9 +55,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
    * @dev Set the parameters for multiple tokenIds - tokenUri and maximum amount to be minted.  Can only be called by owner/admin. Returns array of tokenIds assigned.
    */
   function initialiseNewMultipleTokens(
-    uint256[] calldata amounts,
-    uint256[] calldata prices,
-    string[] calldata uris,
+    TokenMetadataConfig[] calldata tokenConfigs,
     address[] calldata revenueRecipients
   ) external returns (uint256[] memory);
 

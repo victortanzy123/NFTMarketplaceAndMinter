@@ -21,7 +21,7 @@ const MOCK_NFT_1: ArtzoneTokenInitDetails = {
   revenueRecipient: '0xa76E79fb4A357A9828e5bA1843A81E253ABB3C5c',
 };
 
-describe('ERC721 Lazy Mint', function () {
+describe('Artzone Creator Redeem', function () {
   async function deployFixture() {
     const [owner, otherAccount] = await ethers.getSigners();
     const ArtzoneCreatorRedeem = await ethers.getContractFactory('ArtzoneCreatorRedeem');

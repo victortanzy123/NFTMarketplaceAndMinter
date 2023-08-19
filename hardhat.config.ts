@@ -45,10 +45,10 @@ const config: HardhatUserConfig = {
         //   0xCFf94465bd20C91C86b0c41e385052e61ed49f37
         //   0xEBAf3e0b7dBB0Eb41d66875Dd64d9F0F314651B3
         //   0xbFe6D5155040803CeB12a73F8f3763C26dd64a92
-        {
-          privateKey: `${process.env.PRIVATE_KEY}`,
-          balance: '1000000000000000000000000000000000000',
-        },
+        // {
+        //   privateKey: `${process.env.PRIVATE_KEY}`,
+        //   balance: '1000000000000000000000000000000000000',
+        // },
         {
           privateKey: '0xca3547a47684862274b476b689f951fad53219fbde79f66c9394e30f1f0b4904',
           balance: '1000000000000000000000000000000000000',
@@ -63,6 +63,10 @@ const config: HardhatUserConfig = {
         },
         {
           privateKey: '0x380c430a9b8fa9cce5524626d25a942fab0f26801d30bfd41d752be9ba74bd98',
+          balance: '1000000000000000000000000000000000000',
+        },
+        {
+          privateKey: '0x380c430a9b8fa9cce5524626d25a942fab0f26801d30bfd41d752be9ba74bd99',
           balance: '1000000000000000000000000000000000000',
         },
       ],
@@ -90,7 +94,13 @@ const config: HardhatUserConfig = {
       timeout: 200000,
     },
     goerli: {
-      url: `https://goerli.infura.io/v3/${process.env.GOERLI_INFURA_PROJECT_ID}`,
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
+      gasPrice: 30 * 1000000000,
+      timeout: 200000,
+    },
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
       gasPrice: 30 * 1000000000,
       timeout: 200000,
@@ -115,13 +125,14 @@ const config: HardhatUserConfig = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    // apiKey: process.env.SNOWTRACE_KEY,
+    // apiKey: process.env.ETHERSCAN_API_KEY,
     apiKey: {
-      rinkeby: process.env.ETHERSCAN_API_KEY,
-      goerli: process.env.ETHERSCAN_API_KEY,
-      bsc: process.env.BSCSCAN_API_KEY,
-      bscTestnet: process.env.BSCSCAN_API_KEY,
-      polygon: process.env.POLYGONSCAN_API_KEY,
+      rinkeby: process.env.ETHERSCAN_API_KEY || '',
+      goerli: process.env.ETHERSCAN_API_KEY || '',
+      // sepolia: process.env.ETHERSCAN_API_KEY || '',
+      bsc: process.env.BSCSCAN_API_KEY || '',
+      bscTestnet: process.env.BSCSCAN_API_KEY || '',
+      polygon: process.env.POLYGONSCAN_API_KEY || '',
     },
   },
 };

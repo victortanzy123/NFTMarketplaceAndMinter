@@ -225,6 +225,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
       uint256 totalSupply,
       uint256 maxSupply,
       uint256 mintPrice,
+      uint256 maxClaimPerUser,
       string memory uri,
       TokenClaimType claimStatus
     )
@@ -233,6 +234,7 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     totalSupply = tokenMetadata.totalSupply;
     maxSupply = tokenMetadata.maxSupply;
     mintPrice = tokenMetadata.price;
+    maxClaimPerUser = tokenMetadata.maxClaimPerUser;
     uri = tokenMetadata.uri;
     claimStatus = tokenMetadata.claimStatus;
   }

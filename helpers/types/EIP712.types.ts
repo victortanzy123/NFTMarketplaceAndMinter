@@ -1,4 +1,4 @@
-import { ethers } from "hardhat"
+import { ethers } from "ethers"
 
 export type SolidityTypesAsString = "address"
     | "bytes" | "bytes1" | "bytes2" | "bytes3" | "bytes4" | "bytes5" | "bytes6" | "bytes7" | "bytes8" | "bytes9"

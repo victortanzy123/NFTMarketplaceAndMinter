@@ -10,6 +10,7 @@
     "coverage": "yarn hardhat coverage --testfiles ",
     "test-no-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat test --no-compile",
     "deploy:bsc-testnet": "npx hardhat run --network bscTestnet test/deploy.ts",
+    "deploy:sepolia": "npx hardhat run --network sepolia test/deploy.ts",
     "first-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat typechain",
     "compile": "yarn hardhat compile",
     "fcompile": "yarn hardhat clean && yarn hardhat compile",

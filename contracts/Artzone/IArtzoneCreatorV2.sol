@@ -11,6 +11,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
     uint256 indexed tokenId,
     uint256 maxSupply,
     uint256 price,
+    uint256 maxClaimPerUser,
     string tokenUri,
     address revenueReceipient
   );
@@ -37,6 +38,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   function initialiseNewSingleToken(
     uint256 amount,
     uint256 price,
+    uint256 maxClaimPerUser,
     string calldata uri,
     address revenueReceipient
   ) external returns (uint256);
@@ -47,6 +49,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   function initialiseNewMultipleTokens(
     uint256[] calldata amounts,
     uint256[] calldata prices,
+    uint256[] calldata maxClaimPerUsers,
     string[] calldata uris,
     address[] calldata revenueReceipients
   ) external returns (uint256[] memory);

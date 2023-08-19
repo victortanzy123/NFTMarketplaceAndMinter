@@ -18,6 +18,7 @@ interface IERC1155CreatorBase is IRoyalties {
   struct TokenMetadataConfig {
     uint256 totalSupply;
     uint256 maxSupply;
+    uint256 maxClaimPerUser;
     uint256 price;
     string uri;
     RoyaltyConfig[] royalties;
@@ -72,6 +73,7 @@ interface IERC1155CreatorBase is IRoyalties {
     external
     view
     returns (
+      uint256,
       uint256,
       uint256,
       uint256,
