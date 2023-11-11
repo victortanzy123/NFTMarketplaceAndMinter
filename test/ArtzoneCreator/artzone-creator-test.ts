@@ -3,22 +3,7 @@ import {deploy, evm_revert, evm_snapshot} from '../../helpers/hardhat-helpers';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {expect} from 'chai';
 import {ethers, network} from 'hardhat';
-
-type RoyaltyConfig = {
-    receiver: string;
-    bps: number;
-}
-
-type TokenMetadataConfig =  {
-    totalSupply: number;
-    maxSupply: number;
-    maxClaimPerUser: number;
-    price: number;
-    uri: string;
-    royalties: RoyaltyConfig[];
-    claimStatus: number;
-}
-
+import { RoyaltyConfig, TokenMetadataConfig } from "./types"; 
 describe("Artzone Creator", function() {
     async function deployFixture() {
         
@@ -75,9 +60,9 @@ describe("Artzone Creator", function() {
         
         it("should be able to initialise new FREE single token", async function() {
                 const {artzoneContract, owner, otherAccount1, TEST_TOKEN_1, TEST_TOKEN_2} = await loadFixture(deployFixture);
-                // Initialise FREE token via `initialiseNewFreeSingleToken`
-                const {maxSupply, maxClaimPerUser, uri, claimStatus} = TEST_TOKEN_2;
-                const token2MintTx = await artzoneContract.connect(owner).initialiseNewFreeSingleToken(maxSupply, maxClaimPerUser, uri, claimStatus);
+
+                // Initialise FREE token via `initialiseNewSingleToken`
+                const token2MintTx = await artzoneContract.connect(owner).initialiseNewSingleToken(TEST_TOKEN_2, owner.address);
                 const token2TxReceipt = await token2MintTx.wait();
                 const tokenId2 = Number(token2TxReceipt.logs[0].topics[1]);
                 expect(tokenId2).to.be.equal(1);
@@ -136,7 +121,18 @@ describe("Artzone Creator", function() {
             expect(balanceWeiOfAcc3After.sub(balanceWeiOfAcc3Before)).to.be.equal(ethers.BigNumber.from(99))
 
             // expect Artzone Contract to gain (3 * 100 * 100) / 10_000 = 3
-            expect(artzoneBalanceAfter).to.be.equal(ethers.BigNumber.from(3));
+            const expectedArtzoneFundsReceived = ethers.BigNumber.from(3);
+            expect(artzoneBalanceAfter).to.be.equal(expectedArtzoneFundsReceived);
+            
+
+            const account4BalanceBefore = await provider.getBalance(otherAccount4.address);
+            
+            // Withdraw funds by owner to `otherAccount4`
+            const withdrawFundsTx = await artzoneContract.connect(owner).withdraw(otherAccount4.address);
+            await withdrawFundsTx.wait();
+
+            const account4BalanceAfter = await provider.getBalance(otherAccount4.address);
+            expect(account4BalanceAfter.sub(account4BalanceBefore)).to.be.equal(expectedArtzoneFundsReceived);
         })
     })
 

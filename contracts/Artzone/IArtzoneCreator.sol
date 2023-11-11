@@ -32,19 +32,9 @@ interface IArtzoneCreator is IERC1155CreatorBase {
    */
   event TokenRevenueRecipientUpdate(uint256 indexed tokenId, address revenueRecipient);
 
-  /**
-   * @dev Set the parameters for a free claim tokenId - tokenUri and maximum amount to be minted.  Returns tokenId assigned.
-   */
-  function initialiseNewFreeSingleToken(
-    uint256 maxSupply,
-    uint256 maxClaimPerUser,
-    string calldata uri,
-    TokenClaimType initialClaimStatus
-  ) external returns (uint256);
-
 
   /**
-   * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted. Returns tokenId assigned.
+   * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted. Returns tokenId assigned. Can only be called by Admin.
    */
   function initialiseNewSingleToken(
     TokenMetadataConfig calldata tokenConfig,
@@ -60,7 +50,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   ) external returns (uint256[] memory);
 
   /**
-   * @dev Mints existing single token.  Can only be called by any user. Returns tokenId assigned.
+   * @dev Mints existing single token.  Can be called by any user. Returns tokenId assigned.
    */
   function mintExistingSingleToken(
     address receiver,
@@ -69,13 +59,18 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   ) external payable;
 
   /**
-   * @dev Mints multiple tokens.  Can only be called by any user. Returns tokenId assigned.
+   * @dev Mints multiple tokens.  Can be called by any user. Returns tokenId assigned.
    */
   function mintExistingMultipleTokens(
     address[] calldata receivers,
     uint256[] calldata tokenIds,
     uint256[] calldata amounts
   ) external payable;
+
+  /**
+   * @dev Returns the total quantity claimed by a user for a token.
+   */
+  function tokenAmountClaimedByUser(uint256 tokenId, address recipient) external view returns(uint256);
 
   /**
    * @dev Update revenue recipient for an initialised token. Can only be called by Admin.

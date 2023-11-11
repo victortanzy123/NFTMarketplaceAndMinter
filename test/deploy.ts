@@ -11,6 +11,7 @@ import {
   ArtzoneMinterUpgradeable,
   NiftyzoneMinterUpgradeable,
 } from '../typechain';
+import {RoyaltyConfig, TokenMetadataConfig} from "./ArtzoneCreator/types";
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
   return (await hre.ethers.getContractAt(abiType, address)) as CType;
@@ -242,12 +243,38 @@ async function main() {
   // await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
 
   // // Deploy Niftyzone Minter Contract
-  await deploy<ArtzoneCreator>(
-    deployer,
-    'ArtzoneCreator',
-    ['Artzone Collections Test', 'Artzone Collections Test', 100], // 1%
-    true
-  );
+  // await deploy<ArtzoneCreator>(
+  //   deployer,
+  //   'ArtzoneCreator',
+  //   ['AC Test', 'AC Test', 100], // 1%
+  //   true
+  // );
+  const ARTZONE_CREATOR_TEST_ADDRESS: string = "0xd8dc97368a84B9eC0B8376F3C8a9884D06B96DE1"
+
+  const royaltyConfig: RoyaltyConfig = {
+    receiver: deployer.address,
+    bps: 1000,
+  };
+  const TEST_TOKEN_1: TokenMetadataConfig = {
+    totalSupply: 0,
+    maxSupply: 10,
+    maxClaimPerUser: 2,
+    price: 0,
+    uri: "https://cloudflare-ipfs.com/ipfs/QmdqJPJWWBFeZ7g8mXhTZGFHqHou4adZw1TrthbrPQMpgR",
+    royalties: [royaltyConfig] as RoyaltyConfig[],
+    claimStatus: 0,
+  }
+
+  const artzoneCreator = await getContractAt("ArtzoneCreator", ARTZONE_CREATOR_TEST_ADDRESS);
+  const initTokenTx = await artzoneCreator.connect(deployer).initialiseNewSingleToken(TEST_TOKEN_1, deployer.address);
+  const initTokenReceipt = await initTokenTx.wait();
+  console.log("Done initialising token 1 - ", initTokenReceipt);
+  const initTokenId =  Number(initTokenReceipt.logs[0].topics[1]);
+  console.log("See initTokenId", initTokenId)
+
+  const mintTokenTx1 = await artzoneCreator.connect(deployer).mintExistingSingleToken(deployer.address, initTokenId, 1);
+  await mintTokenTx1.wait();
+  console.log("Minted 1 token, completed both actions~");
 }
 
 main()

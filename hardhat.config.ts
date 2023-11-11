@@ -84,13 +84,11 @@ const config: HardhatUserConfig = {
     bsc: {
       url: `https://bsc-dataseed.binance.org/`,
       accounts: [`${process.env.PRIVATE_KEY_BSC || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
     polygon: {
       url: `https://polygon-rpc.com`,
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
     goerli: {
@@ -108,7 +106,7 @@ const config: HardhatUserConfig = {
     bscTestnet: {
       url: `https://data-seed-prebsc-1-s2.binance.org:8545`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
+      // gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
   },

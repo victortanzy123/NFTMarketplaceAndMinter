@@ -17,7 +17,7 @@ contract ArtzoneCreator is
   uint256 public ARTZONE_MINTER_FEE_BPS;
 
   mapping(uint256 => address) internal _tokenRevenueRecipient;
-  mapping(address => uint256) internal _userTokenClaimCount;
+  mapping(uint256 => mapping(address => uint256)) internal _userTokenClaimCount;
 
   constructor(
     string memory name_,
@@ -41,32 +41,12 @@ contract ArtzoneCreator is
   }
 
   /**
-   * @dev See {IArtzoneCreator-initialiseNewFreeSingleToken}.
-   */
-  function initialiseNewFreeSingleToken(
-    uint256 maxSupply,
-    uint256 maxClaimPerUser,
-    string calldata uri,
-    TokenClaimType initialClaimStatus
-  ) external returns (uint256 tokenId) {
-    tokenId = _initialiseToken(
-      maxSupply,
-      0,
-      maxClaimPerUser,
-      uri,
-      address(0),
-      initialClaimStatus
-    );
-  }
-
-
-  /**
    * @dev See {IArtzoneCreator-initialiseNewSingleToken}.
    */
   function initialiseNewSingleToken(
     TokenMetadataConfig calldata tokenConfig,
     address revenueRecipient
-  ) external returns (uint256 tokenId) {
+  ) external onlyPermissionedUser returns (uint256 tokenId) {
     tokenId = _initialiseToken(tokenConfig, revenueRecipient);
   }
 
@@ -117,33 +97,6 @@ contract ArtzoneCreator is
       tokenConfig.uri,
       revenueRecipient
     );
-  }
-
-  function _initialiseToken(
-    uint256 maxSupply,
-    uint256 price,
-    uint256 maxClaimPerUser,
-    string calldata uri,
-    address revenueRecipient,
-    TokenClaimType initialClaimStatus
-  ) internal returns (uint256 tokenId) {
-    require(maxSupply > 0, "Invalid amount");
-    require(maxClaimPerUser > 0, "Invalid max claim quantity");
-    require(maxClaimPerUser <= maxSupply, "Invalid individual claim quantity");
-
-    tokenId = ++_tokenCount;
-
-    TokenMetadataConfig storage tokenMetadata = _tokenMetadata[tokenId];
-    tokenMetadata.totalSupply = 0;
-    tokenMetadata.maxSupply = maxSupply;
-    tokenMetadata.maxClaimPerUser = maxClaimPerUser;
-    tokenMetadata.price = price;
-    tokenMetadata.uri = uri;
-    tokenMetadata.claimStatus = initialClaimStatus;
-
-    _tokenRevenueRecipient[tokenId] = revenueRecipient;
-
-    emit TokenInitialised(tokenId, maxSupply, price, maxClaimPerUser, uri, revenueRecipient);
   }
 
   /**
@@ -215,12 +168,12 @@ contract ArtzoneCreator is
       "Invalid amount specified"
     );
     require(
-      _userTokenClaimCount[receiver] + amount <= _tokenMetadata[tokenId].maxClaimPerUser,
+      _userTokenClaimCount[tokenId][receiver] + amount <= _tokenMetadata[tokenId].maxClaimPerUser,
       "Exceed token max claim limit"
     );
 
     _tokenMetadata[tokenId].totalSupply += amount;
-    _userTokenClaimCount[receiver] += amount;
+    _userTokenClaimCount[tokenId][receiver] += amount;
     _mint(receiver, tokenId, amount, "");
 
     emit TokenMint(tokenId, amount, receiver, msg.sender, _tokenMetadata[tokenId].price * amount);
@@ -255,7 +208,6 @@ contract ArtzoneCreator is
    */
   function updateTokenURI(uint256 tokenId, string calldata uri)
     external
-    virtual
     override(ERC1155CreatorBase, IERC1155CreatorBase)
     onlyPermissionedUser
   {
@@ -267,7 +219,6 @@ contract ArtzoneCreator is
    */
   function updateTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus)
     external
-    virtual
     override(ERC1155CreatorBase, IERC1155CreatorBase)
     onlyPermissionedUser
   {
@@ -307,6 +258,13 @@ contract ArtzoneCreator is
     ARTZONE_MINTER_FEE_BPS = bps;
   }
 
+   /**
+   * @dev See {IArtzoneCreator-updateArtzoneFeeBps}.
+   */
+   function tokenAmountClaimedByUser(uint256 tokenId, address recipient) external view returns (uint256) {
+      return _userTokenClaimCount[tokenId][recipient];
+   }
+
   /**
    * @dev See {IERC165-supportsInterface}.
    */
@@ -317,7 +275,7 @@ contract ArtzoneCreator is
     override(ERC1155CreatorBase, PermissionControl, IERC165)
     returns (bool)
   {
-    return
+    return super.supportsInterface(interfaceId) ||
       ERC1155CreatorBase.supportsInterface(interfaceId) ||
       PermissionControl.supportsInterface(interfaceId);
   }
@@ -325,7 +283,7 @@ contract ArtzoneCreator is
   /**
    * @dev See {IArtzoneCreator-withdraw}.
    */
-  function withdraw(address recipient) external payable onlyPermissionedUser {
+  function withdraw(address recipient) external payable onlyOwner {
     payable(recipient).transfer(address(this).balance);
   }
 
