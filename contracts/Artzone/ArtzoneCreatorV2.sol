@@ -2,21 +2,20 @@
 pragma solidity ^0.8.11;
 
 import "../ERC1155/ERC1155CreatorBase.sol";
-import "./IArtzoneCreator.sol";
+import "./IArtzoneCreatorV2.sol";
 import "../Helpers/Permissions/PermissionControl.sol";
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract ArtzoneCreator is
+contract ArtzoneCreatorV2 is
   ReentrancyGuard,
   ERC1155CreatorBase,
-  IArtzoneCreator,
+  IArtzoneCreatorV2,
   PermissionControl
 {
   uint64 public constant MAX_BPS = 10_000;
   uint256 public ARTZONE_MINTER_FEE_BPS;
 
-  mapping(uint256 => address) internal _tokenRevenueRecipient;
   mapping(uint256 => mapping(address => uint256)) internal _userTokenClaimCount;
 
   constructor(
@@ -29,6 +28,7 @@ contract ArtzoneCreator is
 
   modifier checkTokenClaimable(uint256 tokenId, address user) {
     TokenClaimType claimStatus = _tokenMetadata[tokenId].claimStatus;
+    uint256 expiry = _tokenMetadata[tokenId].expiry;
     if (isPermissionedUser(user)) {
       require(
         claimStatus == TokenClaimType.PUBLIC || claimStatus == TokenClaimType.ADMIN,
@@ -37,31 +37,32 @@ contract ArtzoneCreator is
     } else {
       require(claimStatus == TokenClaimType.PUBLIC, "Token public mint disabled");
     }
+    require(expiry == 0 || expiry > block.timestamp, "Mint window has expired.");
     _;
   }
 
   /**
    * @dev See {IArtzoneCreator-initialiseNewSingleToken}.
    */
-  function initialiseNewSingleToken(
-    TokenMetadataConfig calldata tokenConfig,
-    address revenueRecipient
-  ) external onlyPermissionedUser returns (uint256 tokenId) {
-    tokenId = _initialiseToken(tokenConfig, revenueRecipient);
+  function initialiseNewSingleToken(TokenMetadataConfig calldata tokenConfig)
+    external
+    returns (uint256 tokenId)
+  {
+    tokenId = _initialiseToken(tokenConfig);
   }
 
   /**
    * @dev See {IArtzoneCreator-initialiseNewMultipleToken}.
    */
-  function initialiseNewMultipleTokens(
-    TokenMetadataConfig[] calldata tokenConfigs,
-    address[] calldata revenueRecipients
-  ) external onlyPermissionedUser returns (uint256[] memory tokenIds) {
+  function initialiseNewMultipleTokens(TokenMetadataConfig[] calldata tokenConfigs)
+    external
+    returns (uint256[] memory tokenIds)
+  {
     uint256 length = tokenConfigs.length;
     tokenIds = new uint256[](length);
 
     for (uint256 i = 0; i < length; ) {
-      uint256 tokenId = _initialiseToken(tokenConfigs[i], revenueRecipients[i]);
+      uint256 tokenId = _initialiseToken(tokenConfigs[i]);
       tokenIds[i] = tokenId;
       unchecked {
         i++;
@@ -72,7 +73,7 @@ contract ArtzoneCreator is
   /**
    * @dev Internal function to initialise a token via all the parameters of `TokenMetadataConfig` specified alongside with the `revenueRecipient` for mint fee collection.
    */
-  function _initialiseToken(TokenMetadataConfig calldata tokenConfig, address revenueRecipient)
+  function _initialiseToken(TokenMetadataConfig calldata tokenConfig)
     internal
     returns (uint256 tokenId)
   {
@@ -83,19 +84,22 @@ contract ArtzoneCreator is
       tokenConfig.maxClaimPerUser <= tokenConfig.maxSupply,
       "Invalid individual claim quantity"
     );
+    require(
+      tokenConfig.expiry == 0 || tokenConfig.expiry > block.timestamp,
+      "Invalid expiry timestamp"
+    );
 
     tokenId = ++_tokenCount;
-
     _tokenMetadata[tokenId] = tokenConfig;
-    _tokenRevenueRecipient[tokenId] = revenueRecipient;
 
     emit TokenInitialised(
       tokenId,
       tokenConfig.maxSupply,
-      tokenConfig.price,
       tokenConfig.maxClaimPerUser,
+      tokenConfig.price,
+      tokenConfig.expiry,
       tokenConfig.uri,
-      revenueRecipient
+      tokenConfig.creator
     );
   }
 
@@ -171,6 +175,8 @@ contract ArtzoneCreator is
       _userTokenClaimCount[tokenId][receiver] + amount <= _tokenMetadata[tokenId].maxClaimPerUser,
       "Exceed token max claim limit"
     );
+    uint256 expiry = _tokenMetadata[tokenId].expiry;
+    require(expiry == 0 || expiry > block.timestamp, "Expired mint window");
 
     _tokenMetadata[tokenId].totalSupply += amount;
     _userTokenClaimCount[tokenId][receiver] += amount;
@@ -200,11 +206,11 @@ contract ArtzoneCreator is
    */
   function _processMintFees(uint256 tokenId, uint256 totalPayableAmount) internal nonReentrant {
     uint256 artzoneFee = (totalPayableAmount * ARTZONE_MINTER_FEE_BPS) / MAX_BPS;
-    payable(_tokenRevenueRecipient[tokenId]).transfer(totalPayableAmount - artzoneFee);
+    payable(_tokenMetadata[tokenId].creator).transfer(totalPayableAmount - artzoneFee);
   }
 
   /**
-   * @dev Set token uri after a token is minted by permissioned user.
+   * @dev Set token uri after a token is minted by permissioned user from Artzone.
    */
   function updateTokenURI(uint256 tokenId, string calldata uri)
     external
@@ -215,7 +221,7 @@ contract ArtzoneCreator is
   }
 
   /**
-   * @dev Set token uri after a token is minted by permissioned user.
+   * @dev Set token uri after a token is minted by permissioned user from Artzone.
    */
   function updateTokenClaimStatus(uint256 tokenId, TokenClaimType claimStatus)
     external
@@ -226,13 +232,24 @@ contract ArtzoneCreator is
   }
 
   /**
-   * @dev Set secondary royalties for a particular tokenId by permissioned user.
+   * @dev Set secondary royalties for a particular tokenId by current registered creator.
    */
   function setRoyalties(
     uint256 tokenId,
     address payable[] calldata receivers,
     uint256[] calldata basisPoints
-  ) external override(ERC1155CreatorBase, IERC1155CreatorBase) onlyPermissionedUser {
+  ) external override(ERC1155CreatorBase, IERC1155CreatorBase) onlyTokenCreator(tokenId) {
+    _setRoyalties(tokenId, receivers, basisPoints);
+  }
+
+  /**
+   * @dev Admin manual override for secondary royalties for a particular tokenId.
+   */
+  function adminOverrideRoyalties(
+    uint256 tokenId,
+    address payable[] calldata receivers,
+    uint256[] calldata basisPoints
+  ) external onlyPermissionedUser {
     _setRoyalties(tokenId, receivers, basisPoints);
   }
 
@@ -245,9 +262,28 @@ contract ArtzoneCreator is
     onlyPermissionedUser
   {
     require(newRecipient != address(0), "Null address");
-    _tokenRevenueRecipient[tokenId] = newRecipient;
+    _tokenMetadata[tokenId].creator = newRecipient;
 
     emit TokenRevenueRecipientUpdate(tokenId, newRecipient);
+  }
+
+  /**
+   * @dev See {IArtzoneCreator-extendTokenMintExpiry}.
+   */
+  function extendTokenMintExpiry(uint256 tokenId, uint256 newExpiry)
+    external
+    isExistingToken(tokenId)
+    onlyPermissionedUser
+  {
+    uint256 currentExpiry = _tokenMetadata[tokenId].expiry;
+    require(currentExpiry != 0, "No expiry initialised.");
+    require(
+      newExpiry == 0 || newExpiry > currentExpiry,
+      "Invalid new expiry, only extension allowed."
+    );
+    _tokenMetadata[tokenId].expiry = newExpiry;
+
+    emit TokenMintExpiryExtension(tokenId, newExpiry);
   }
 
   /**
@@ -258,12 +294,23 @@ contract ArtzoneCreator is
     ARTZONE_MINTER_FEE_BPS = bps;
   }
 
-   /**
+  /**
    * @dev See {IArtzoneCreator-updateArtzoneFeeBps}.
    */
-   function tokenAmountClaimedByUser(uint256 tokenId, address recipient) external view returns (uint256) {
-      return _userTokenClaimCount[tokenId][recipient];
-   }
+  function tokenAmountClaimedByUser(uint256 tokenId, address recipient)
+    external
+    view
+    returns (uint256)
+  {
+    return _userTokenClaimCount[tokenId][recipient];
+  }
+
+  /**
+   * @dev See {IArtzoneCreator-tokenMintExpiry}.
+   */
+  function tokenMintExpiry(uint256 tokenId) external view returns (uint256) {
+    return _tokenMetadata[tokenId].expiry;
+  }
 
   /**
    * @dev See {IERC165-supportsInterface}.
@@ -275,7 +322,8 @@ contract ArtzoneCreator is
     override(ERC1155CreatorBase, PermissionControl, IERC165)
     returns (bool)
   {
-    return super.supportsInterface(interfaceId) ||
+    return
+      super.supportsInterface(interfaceId) ||
       ERC1155CreatorBase.supportsInterface(interfaceId) ||
       PermissionControl.supportsInterface(interfaceId);
   }

@@ -20,7 +20,9 @@ interface IERC1155CreatorBase is IRoyalties {
     uint256 maxSupply;
     uint256 maxClaimPerUser;
     uint256 price;
+    uint256 expiry;
     string uri;
+    address creator;
     RoyaltyConfig[] royalties;
     TokenClaimType claimStatus;
   }
@@ -77,7 +79,9 @@ interface IERC1155CreatorBase is IRoyalties {
       uint256,
       uint256,
       uint256,
+      uint256,
       string memory,
+      address,
       TokenClaimType
     );
 }

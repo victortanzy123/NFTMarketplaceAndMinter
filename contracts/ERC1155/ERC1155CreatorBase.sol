@@ -23,10 +23,6 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
   uint256 internal _tokenCount = 0;
 
   mapping(uint256 => TokenMetadataConfig) internal _tokenMetadata;
-  // mapping(uint256 => uint256) internal _tokenSupply;
-  // // Mapping for individual token URIs
-  // mapping(uint256 => string) internal _tokenURIs;
-  // mapping(uint256 => RoyaltyConfig[]) internal _tokenRoyalty;
 
   bytes4 private constant ERC1155_CREATORBASE_V1 = 0x28f10a21;
 
@@ -73,6 +69,11 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
 
   modifier isExistingToken(uint256 tokenId) {
     require(tokenId > 0 && tokenId <= _tokenCount, "Invalid token");
+    _;
+  }
+
+  modifier onlyTokenCreator(uint256 tokenId) {
+    require(_tokenMetadata[tokenId].creator == msg.sender, "Not token creator");
     _;
   }
 
@@ -224,9 +225,11 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     returns (
       uint256 totalSupply,
       uint256 maxSupply,
-      uint256 mintPrice,
       uint256 maxClaimPerUser,
+      uint256 mintPrice,
+      uint256 expiry,
       string memory uri,
+      address creator,
       TokenClaimType claimStatus
     )
   {
@@ -235,7 +238,9 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     maxSupply = tokenMetadata.maxSupply;
     mintPrice = tokenMetadata.price;
     maxClaimPerUser = tokenMetadata.maxClaimPerUser;
+    expiry = tokenMetadata.expiry;
     uri = tokenMetadata.uri;
+    creator = tokenMetadata.creator;
     claimStatus = tokenMetadata.claimStatus;
   }
 

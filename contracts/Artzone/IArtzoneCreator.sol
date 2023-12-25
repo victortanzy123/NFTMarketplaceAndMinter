@@ -12,6 +12,7 @@ interface IArtzoneCreator is IERC1155CreatorBase {
     uint256 maxSupply,
     uint256 price,
     uint256 maxClaimPerUser,
+    uint256 expiry,
     string tokenUri,
     address revenueRecipient
   );
@@ -32,13 +33,13 @@ interface IArtzoneCreator is IERC1155CreatorBase {
    */
   event TokenRevenueRecipientUpdate(uint256 indexed tokenId, address revenueRecipient);
 
-
   /**
    * @dev Set the parameters for a tokenId - tokenUri and maximum amount to be minted. Returns tokenId assigned. Can only be called by Admin.
    */
   function initialiseNewSingleToken(
     TokenMetadataConfig calldata tokenConfig,
-    address revenueRecipient
+    address revenueRecipient,
+    uint256 expiry
   ) external returns (uint256);
 
   /**
@@ -70,7 +71,15 @@ interface IArtzoneCreator is IERC1155CreatorBase {
   /**
    * @dev Returns the total quantity claimed by a user for a token.
    */
-  function tokenAmountClaimedByUser(uint256 tokenId, address recipient) external view returns(uint256);
+  function tokenAmountClaimedByUser(uint256 tokenId, address recipient)
+    external
+    view
+    returns (uint256);
+
+  /**
+   * @dev Returns the timestamp of the token mint expiry based on tokenId specified.
+   */
+  function tokenMintExpiry(uint256 tokenId) external view returns (uint256);
 
   /**
    * @dev Update revenue recipient for an initialised token. Can only be called by Admin.

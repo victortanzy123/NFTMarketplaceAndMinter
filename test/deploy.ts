@@ -1,17 +1,8 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {BigNumber, Contract} from 'ethers';
 import hre from 'hardhat';
-import {
-  TestContract,
-  ArtzoneCreator,
-  ERC1967Proxy,
-  NiftyzoneMarketplace,
-  NiftyzoneMinter,
-  ArtzoneMinter,
-  ArtzoneMinterUpgradeable,
-  NiftyzoneMinterUpgradeable,
-} from '../typechain';
-import {RoyaltyConfig, TokenMetadataConfig} from "./ArtzoneCreator/types";
+import {ArtzoneCreator} from '../typechain';
+import {RoyaltyConfig, TokenMetadataConfig} from './ArtzoneCreator/types';
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
   return (await hre.ethers.getContractAt(abiType, address)) as CType;
@@ -184,97 +175,36 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
-  // // Deploy Niftyzone Minter Contract
-  // let minterContract = await deploy<NiftyzoneMinter>(deployer, 'NiftyzoneMinter', [], true);
+  // const ARTZONE_CREATOR_TEST_ADDRESS: string = '0xd8dc97368a84B9eC0B8376F3C8a9884D06B96DE1';
 
-  // Deploy Niftyzone Marketplace (UUPS) Contract
-  // let marketplaceContract = await deployUUPSUpgradableContract<NiftyzoneMarketplace>(
-  //   deployer,
-  //   'NiftyzoneMarketplace',
-  //   [],
-  //   [[]],
-  //   true,
-  //   'NiftyzoneMarketplace'
-  // );
+  // const royaltyConfig: RoyaltyConfig = {
+  //   receiver: deployer.address,
+  //   bps: 1000,
+  // };
+  // const TEST_TOKEN_1: TokenMetadataConfig = {
+  //   totalSupply: 0,
+  //   maxSupply: 10,
+  //   maxClaimPerUser: 2,
+  //   price: 0,
+  //   expiry: 0,
+  //   uri: 'https://cloudflare-ipfs.com/ipfs/QmdqJPJWWBFeZ7g8mXhTZGFHqHou4adZw1TrthbrPQMpgR',
+  //   creator: deployer.address,
+  //   royalties: [royaltyConfig] as RoyaltyConfig[],
+  //   claimStatus: 0,
+  // };
 
-  // // Upgrade NiftyzoneMarketplace Contract.
-  // let upgradedMarketplaceContract = await upgradeUUPSUpgradeableContract(
-  //   deployer,
-  //   'NiftyzoneMarketplace',
-  //   '0x2B7DBE2Ec5b2bcf35Ba2372d219A2731f2bB7888',
-  //   '0x26E6aDf232455B4AeD8F464576fe37A20B76aE47',
-  //   true,
-  //   'NiftyzoneMarketplaceV3'
-  // );
+  // const artzoneCreator = await getContractAt('ArtzoneCreator', ARTZONE_CREATOR_TEST_ADDRESS);
+  // const initTokenTx = await artzoneCreator.connect(deployer).initialiseNewSingleToken(TEST_TOKEN_1);
+  // const initTokenReceipt = await initTokenTx.wait();
+  // console.log('Done initialising token 1 - ', initTokenReceipt);
+  // const initTokenId = Number(initTokenReceipt.logs[0].topics[1]);
+  // console.log('See initTokenId', initTokenId);
 
-  // // Deploy Artzone Minter Contract
-  // let artzoneMinterContract = await deploy<ArtzoneMinter>(
-  //   deployer,
-  //   'ArtzoneMinter',
-  //   ['0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F'],
-  //   true
-  // );
-
-  // // Deploy Artzone Minter Upgradeable (UUPS) Contract
-  // let artzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<ArtzoneMinterUpgradeable>(
-  //   deployer,
-  //   'ArtzoneMinterUpgradeable',
-  //   [],
-  //   [
-  //     [
-  //       '0x8eA7508BE9b5291c00F4364C64a174289C0f5D2F',
-  //       '0x29A768F1688722EcbCCa3c11C1dE41FF314265bD',
-  //       '0x1D7e965D07a740FEd34D3Fb39805A7AFd121F34e',
-  //     ],
-  //   ],
-  //   true,
-  //   'ArtzoneMinterUpgradeable'
-  // );
-
-  // let niftyzoneMinterUpgradeableContract = await deployUUPSUpgradableContract<NiftyzoneMinterUpgradeable>(
-  //   deployer,
-  //   'NiftyzoneMinterUpgradeable',
-  //   [],
-  //   [],
-  //   true,
-  //   'NiftyzoneMinterUpgradeable'
-  // );
-
-  // await deployUUPSUpgradableContract<TestContract>(deployer, 'TestContract', [], [], true, 'TestContract');
-
-  // // Deploy Niftyzone Minter Contract
-  // await deploy<ArtzoneCreator>(
-  //   deployer,
-  //   'ArtzoneCreator',
-  //   ['AC Test', 'AC Test', 100], // 1%
-  //   true
-  // );
-  const ARTZONE_CREATOR_TEST_ADDRESS: string = "0xd8dc97368a84B9eC0B8376F3C8a9884D06B96DE1"
-
-  const royaltyConfig: RoyaltyConfig = {
-    receiver: deployer.address,
-    bps: 1000,
-  };
-  const TEST_TOKEN_1: TokenMetadataConfig = {
-    totalSupply: 0,
-    maxSupply: 10,
-    maxClaimPerUser: 2,
-    price: 0,
-    uri: "https://cloudflare-ipfs.com/ipfs/QmdqJPJWWBFeZ7g8mXhTZGFHqHou4adZw1TrthbrPQMpgR",
-    royalties: [royaltyConfig] as RoyaltyConfig[],
-    claimStatus: 0,
-  }
-
-  const artzoneCreator = await getContractAt("ArtzoneCreator", ARTZONE_CREATOR_TEST_ADDRESS);
-  const initTokenTx = await artzoneCreator.connect(deployer).initialiseNewSingleToken(TEST_TOKEN_1, deployer.address);
-  const initTokenReceipt = await initTokenTx.wait();
-  console.log("Done initialising token 1 - ", initTokenReceipt);
-  const initTokenId =  Number(initTokenReceipt.logs[0].topics[1]);
-  console.log("See initTokenId", initTokenId)
-
-  const mintTokenTx1 = await artzoneCreator.connect(deployer).mintExistingSingleToken(deployer.address, initTokenId, 1);
-  await mintTokenTx1.wait();
-  console.log("Minted 1 token, completed both actions~");
+  // const mintTokenTx1 = await artzoneCreator
+  //   .connect(deployer)
+  //   .mintExistingSingleToken(deployer.address, initTokenId, 1);
+  // await mintTokenTx1.wait();
+  // console.log('Minted 1 token, completed both actions~');
 }
 
 main()

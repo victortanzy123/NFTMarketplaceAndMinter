@@ -9,6 +9,7 @@
     "run": "npx hardhat run",
     "coverage": "yarn hardhat coverage --testfiles ",
     "test-no-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat test --no-compile",
+    "test:artzone-creator-v2": "npx hardhat test ./test/ArtzoneCreator/artzone-creator-test.ts",
     "deploy:bsc-testnet": "npx hardhat run --network bscTestnet test/deploy.ts",
     "deploy:sepolia": "npx hardhat run --network sepolia test/deploy.ts",
     "first-compile": "TS_NODE_TRANSPILE_ONLY=1 yarn hardhat typechain",
@@ -21,7 +22,6 @@
   "author": "",
   "license": "AGPL-3.0",
   "dependencies": {
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.19.0",
     "@uniswap/v3-periphery": "^1.0.1",
@@ -30,6 +30,7 @@
     "node-fetch": "^3.2.4"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomiclabs/hardhat-ethers": "^2.0.3",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.0",
