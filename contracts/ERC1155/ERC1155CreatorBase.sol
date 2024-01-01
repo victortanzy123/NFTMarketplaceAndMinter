@@ -139,6 +139,8 @@ abstract contract ERC1155CreatorBase is ERC1155Core, IERC1155CreatorBase, Reentr
     isExistingToken(tokenId)
   {
     _tokenMetadata[tokenId].uri = uri;
+
+    emit URI(uri, tokenId);
   }
 
   /**
