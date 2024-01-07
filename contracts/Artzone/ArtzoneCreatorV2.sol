@@ -37,7 +37,7 @@ contract ArtzoneCreatorV2 is
     } else {
       require(claimStatus == TokenClaimType.PUBLIC, "Token public mint disabled");
     }
-    require(expiry == 0 || expiry > block.timestamp, "Mint window has expired.");
+    require(expiry == 0 || expiry > block.timestamp, "Expired mint window");
     _;
   }
 
@@ -71,39 +71,6 @@ contract ArtzoneCreatorV2 is
   }
 
   /**
-   * @dev Internal function to initialise a token via all the parameters of `TokenMetadataConfig` specified alongside with the `revenueRecipient` for mint fee collection.
-   */
-  function _initialiseToken(TokenMetadataConfig calldata tokenConfig)
-    internal
-    returns (uint256 tokenId)
-  {
-    require(tokenConfig.totalSupply == 0, "Initial total supply should be 0");
-    require(tokenConfig.maxSupply > 0, "Invalid amount");
-    require(tokenConfig.maxClaimPerUser > 0, "Invalid max claim quantity");
-    require(
-      tokenConfig.maxClaimPerUser <= tokenConfig.maxSupply,
-      "Invalid individual claim quantity"
-    );
-    require(
-      tokenConfig.expiry == 0 || tokenConfig.expiry > block.timestamp,
-      "Invalid expiry timestamp"
-    );
-
-    tokenId = ++_tokenCount;
-    _tokenMetadata[tokenId] = tokenConfig;
-
-    emit TokenInitialised(
-      tokenId,
-      tokenConfig.maxSupply,
-      tokenConfig.maxClaimPerUser,
-      tokenConfig.price,
-      tokenConfig.expiry,
-      tokenConfig.uri,
-      tokenConfig.creator
-    );
-  }
-
-  /**
    * @dev See {IArtzoneCreator-mintExistingSingleToken}.
    */
   function mintExistingSingleToken(
@@ -111,7 +78,6 @@ contract ArtzoneCreatorV2 is
     uint256 tokenId,
     uint256 amount
   ) external payable {
-    require(amount > 0, "Invalid amount");
     if (!isPermissionedUser(msg.sender) && _tokenMetadata[tokenId].price > 0) {
       uint256 totalPayableAmount = _tokenMetadata[tokenId].price * amount;
       require(msg.value == totalPayableAmount, "Unmatched value sent");
@@ -159,6 +125,51 @@ contract ArtzoneCreatorV2 is
   }
 
   /**
+   * @dev See {IArtzoneCreatorV2-initialiseAndMintNewSingleToken}.
+   */
+  function initialiseAndMintNewSingleToken(
+    TokenMetadataConfig calldata tokenConfig,
+    address receiver,
+    uint256 amount
+  ) external returns (uint256 tokenId) {
+    tokenId = _initialiseToken(tokenConfig);
+    _mintExistingToken(tokenId, receiver, amount);
+  }
+
+  /**
+   * @dev Internal function to initialise a token via all the parameters of `TokenMetadataConfig` specified alongside with the `revenueRecipient` for mint fee collection.
+   */
+  function _initialiseToken(TokenMetadataConfig calldata tokenConfig)
+    internal
+    returns (uint256 tokenId)
+  {
+    require(tokenConfig.totalSupply == 0, "Initial total supply should be 0");
+    require(tokenConfig.maxSupply > 0, "Invalid amount");
+    require(tokenConfig.maxClaimPerUser > 0, "Invalid max claim quantity");
+    require(
+      tokenConfig.maxClaimPerUser <= tokenConfig.maxSupply,
+      "Invalid individual claim quantity"
+    );
+    require(
+      tokenConfig.expiry == 0 || tokenConfig.expiry > block.timestamp,
+      "Invalid expiry timestamp"
+    );
+
+    tokenId = ++_tokenCount;
+    _tokenMetadata[tokenId] = tokenConfig;
+
+    emit TokenInitialised(
+      tokenId,
+      tokenConfig.maxSupply,
+      tokenConfig.maxClaimPerUser,
+      tokenConfig.price,
+      tokenConfig.expiry,
+      tokenConfig.uri,
+      tokenConfig.creator
+    );
+  }
+
+  /**
    * @dev Internal function to process minting of a valid `tokenId` with the specified `amount` and `receiver`.
    */
   function _mintExistingToken(
@@ -166,6 +177,7 @@ contract ArtzoneCreatorV2 is
     address receiver,
     uint256 amount
   ) internal nonReentrant checkTokenClaimable(tokenId, msg.sender) {
+    require(amount > 0, "Amount be at least one");
     require(tokenId <= _tokenCount, "Invalid tokenId specified");
     require(
       _tokenMetadata[tokenId].totalSupply + amount <= _tokenMetadata[tokenId].maxSupply,
@@ -175,8 +187,6 @@ contract ArtzoneCreatorV2 is
       _userTokenClaimCount[tokenId][receiver] + amount <= _tokenMetadata[tokenId].maxClaimPerUser,
       "Exceed token max claim limit"
     );
-    uint256 expiry = _tokenMetadata[tokenId].expiry;
-    require(expiry == 0 || expiry > block.timestamp, "Expired mint window");
 
     _tokenMetadata[tokenId].totalSupply += amount;
     _userTokenClaimCount[tokenId][receiver] += amount;
