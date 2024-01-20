@@ -1,8 +1,8 @@
 import {ArtzoneCreatorV2} from '../../typechain';
-import {deploy, evm_revert, evm_snapshot, setNextBlockTimeStamp} from '../../helpers/hardhat-helpers';
+import {setNextBlockTimeStamp, deployMockContract} from '../../helpers/hardhat-helpers';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {expect} from 'chai';
-import {ethers, network} from 'hardhat';
+import {ethers} from 'hardhat';
 import {RoyaltyConfig, TokenMetadataConfig} from './types';
 
 const TEST_TOKEN_EXPIRY = 1790000000;
@@ -64,7 +64,7 @@ describe('Artzone Creator', function () {
       claimStatus: 0,
     };
 
-    const artzoneContract = await deploy<ArtzoneCreatorV2>('ArtzoneCreatorV2', [
+    const artzoneContract = await deployMockContract<ArtzoneCreatorV2>('ArtzoneCreatorV2', [
       'Artzone Collections',
       'Artzone Collections',
       100,
@@ -269,15 +269,6 @@ describe('Artzone Creator', function () {
       // expect Artzone Contract to gain (3 * 100 * 100) / 10_000 = 3
       const expectedArtzoneFundsReceived = ethers.BigNumber.from(3);
       expect(artzoneBalanceAfter).to.be.equal(expectedArtzoneFundsReceived);
-
-      const account4BalanceBefore = await provider.getBalance(otherAccount4.address);
-
-      // Withdraw funds by owner to `otherAccount4`
-      const withdrawFundsTx = await artzoneContract.connect(owner).withdraw(otherAccount4.address);
-      await withdrawFundsTx.wait();
-
-      const account4BalanceAfter = await provider.getBalance(otherAccount4.address);
-      expect(account4BalanceAfter.sub(account4BalanceBefore)).to.be.equal(expectedArtzoneFundsReceived);
     });
   });
 
@@ -307,6 +298,63 @@ describe('Artzone Creator', function () {
         .connect(owner)
         .initialiseAndMintNewSingleToken(TEST_TOKEN_2, otherAccount1.address, 6);
       await expect(token2InitAndMintTxPromise).to.be.revertedWith('Exceed token max claim limit');
+    });
+  });
+
+  describe('[Platform Revenue Withdrawal]', () => {
+    it('should allow owner to withdraw platform fees.', async () => {
+      const {artzoneContract, owner, otherAccount4, TEST_TOKEN_1, TEST_TOKEN_2, TEST_TOKEN_3} = await loadFixture(
+        deployFixture
+      );
+
+      const tokensToInitialise: TokenMetadataConfig[] = [TEST_TOKEN_1, TEST_TOKEN_2, TEST_TOKEN_3];
+
+      // Initialise tokens
+      const tokensMintTx = await artzoneContract.connect(owner).initialiseNewMultipleTokens(tokensToInitialise);
+      const tokensTxReceipt = await tokensMintTx.wait();
+
+      // Mint tokens
+      const weiToSend = ethers.utils.parseUnits('300', 'wei'); // Convert to BigNumber -> since 10 + 0 + 10 = 20
+      const batchTokenMintTx = await artzoneContract
+        .connect(otherAccount4)
+        .mintExistingMultipleTokens([owner.address, owner.address, owner.address], [1, 2, 3], [2, 1, 1], {
+          value: weiToSend,
+        });
+
+      const provider = ethers.provider;
+
+      // expect Artzone Contract to gain (3 * 100 * 100) / 10_000 = 3
+      const expectedArtzoneFundsReceived = ethers.BigNumber.from(3);
+      const account4BalanceBefore = await provider.getBalance(otherAccount4.address);
+
+      // Withdraw funds by owner to `otherAccount4`
+      const withdrawFundsTx = await artzoneContract.connect(owner).withdraw(otherAccount4.address);
+      await withdrawFundsTx.wait();
+
+      const account4BalanceAfter = await provider.getBalance(otherAccount4.address);
+      expect(account4BalanceAfter.sub(account4BalanceBefore)).to.be.equal(expectedArtzoneFundsReceived);
+    });
+
+    it('should NOT allow an external entity to withdraw collected revenue.', async () => {
+      const {artzoneContract, owner, otherAccount1, otherAccount4, TEST_TOKEN_1, TEST_TOKEN_2, TEST_TOKEN_3} =
+        await loadFixture(deployFixture);
+
+      const tokensToInitialise: TokenMetadataConfig[] = [TEST_TOKEN_1, TEST_TOKEN_2, TEST_TOKEN_3];
+
+      // Initialise tokens
+      const tokensMintTx = await artzoneContract.connect(owner).initialiseNewMultipleTokens(tokensToInitialise);
+      const tokensTxReceipt = await tokensMintTx.wait();
+
+      // Mint tokens
+      const weiToSend = ethers.utils.parseUnits('300', 'wei'); // Convert to BigNumber -> since 10 + 0 + 10 = 20
+      const batchTokenMintTx = await artzoneContract
+        .connect(otherAccount4)
+        .mintExistingMultipleTokens([owner.address, owner.address, owner.address], [1, 2, 3], [2, 1, 1], {
+          value: weiToSend,
+        });
+
+      const invalidExternalWithdrawTxPromise = artzoneContract.connect(otherAccount1).withdraw(otherAccount1.address);
+      await expect(invalidExternalWithdrawTxPromise).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 });

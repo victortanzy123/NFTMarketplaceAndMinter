@@ -1,8 +1,7 @@
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {BigNumber, Contract} from 'ethers';
 import hre from 'hardhat';
-import {ArtzoneCreator} from '../typechain';
-import {RoyaltyConfig, TokenMetadataConfig} from './ArtzoneCreator/types';
+import {ArtzoneCreatorV2} from '../typechain';
 
 export async function getContractAt<CType extends Contract>(abiType: string, address: string) {
   return (await hre.ethers.getContractAt(abiType, address)) as CType;
@@ -87,7 +86,7 @@ This method worked just fine until It was fine until a malicious backdoor, proxy
 To resolve the clashing, OpenZeppelin introduced the transparent proxy pattern. This pattern allows identical function signatures to exist in the proxy and logic contract, but the delegatecall to the logic contract only occurs if the caller is not a contract admin. Otherwise, the function is invoked in the proxy contract itself if it exists or reverts if not.
 
 
-3. UUPS Proxy Pattern
+3. UUPS Proxy Pattern - ERC-1967 Proxy Pattern
 
 The UUPS proxy pattern is similar to the transparent proxy pattern, except the upgrade is triggered via the logic contract rather than from the proxy contract.
 
@@ -173,10 +172,8 @@ export async function upgradeUUPSUpgradeableContract<CType extends Contract>(
 }
 
 async function main() {
-  const [deployer] = await hre.ethers.getSigners();
-
+  // const [deployer] = await hre.ethers.getSigners();
   // const ARTZONE_CREATOR_TEST_ADDRESS: string = '0xd8dc97368a84B9eC0B8376F3C8a9884D06B96DE1';
-
   // const royaltyConfig: RoyaltyConfig = {
   //   receiver: deployer.address,
   //   bps: 1000,
@@ -192,14 +189,12 @@ async function main() {
   //   royalties: [royaltyConfig] as RoyaltyConfig[],
   //   claimStatus: 0,
   // };
-
   // const artzoneCreator = await getContractAt('ArtzoneCreator', ARTZONE_CREATOR_TEST_ADDRESS);
   // const initTokenTx = await artzoneCreator.connect(deployer).initialiseNewSingleToken(TEST_TOKEN_1);
   // const initTokenReceipt = await initTokenTx.wait();
   // console.log('Done initialising token 1 - ', initTokenReceipt);
   // const initTokenId = Number(initTokenReceipt.logs[0].topics[1]);
   // console.log('See initTokenId', initTokenId);
-
   // const mintTokenTx1 = await artzoneCreator
   //   .connect(deployer)
   //   .mintExistingSingleToken(deployer.address, initTokenId, 1);

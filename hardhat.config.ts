@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 
 import {HardhatUserConfig} from 'hardhat/config';
 import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-ethers';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
@@ -91,16 +92,21 @@ const config: HardhatUserConfig = {
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
       timeout: 200000,
     },
+    polygonMumbai: {
+      url: `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
+      timeout: 20000,
+    },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
+      // gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
-    sepolia: {
+    sepoliaTestnet: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
-      gasPrice: 30 * 1000000000,
+      // gasPrice: 30 * 1000000000,
       timeout: 200000,
     },
     bscTestnet: {
@@ -108,6 +114,21 @@ const config: HardhatUserConfig = {
       accounts: [`${process.env.PRIVATE_KEY_727 || dummyPrivateKey}`],
       // gasPrice: 30 * 1000000000,
       timeout: 200000,
+    },
+    scrollTestnet: {
+      url: `https://sepolia-rpc.scroll.io/`,
+      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      timeout: 200000,
+    },
+    scroll: {
+      url: 'https://alpha-rpc.scroll.io/l2',
+      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      timeout: 200000,
+    },
+    berachainTestnet: {
+      chainId: 80085,
+      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      url: 'https://artio.rpc.berachain.com/',
     },
   },
   typechain: {
@@ -123,15 +144,35 @@ const config: HardhatUserConfig = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    // apiKey: process.env.ETHERSCAN_API_KEY,
     apiKey: {
       rinkeby: process.env.ETHERSCAN_API_KEY || '',
       goerli: process.env.ETHERSCAN_API_KEY || '',
-      // sepolia: process.env.ETHERSCAN_API_KEY || '',
+      sepolia: process.env.ETHERSCAN_API_KEY || '',
       bsc: process.env.BSCSCAN_API_KEY || '',
       bscTestnet: process.env.BSCSCAN_API_KEY || '',
       polygon: process.env.POLYGONSCAN_API_KEY || '',
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY || '',
+      scrollTestnet: process.env.SCROLLSCAN_API_KEY || '',
+      scroll: process.env.SCROLLSCAN_API_KEY || '',
     },
+    customChains: [
+      {
+        network: 'scrollTestnet',
+        chainId: 534351,
+        urls: {
+          apiURL: 'https://api-sepolia.scrollscan.com/api',
+          browserURL: 'https://sepolia.scrollscan.com/',
+        },
+      },
+      {
+        network: 'scroll',
+        chainId: 534352,
+        urls: {
+          apiURL: 'https://api.scrollscan.com/api',
+          browserURL: 'https://scrollscan.com/',
+        },
+      },
+    ],
   },
 };
 
