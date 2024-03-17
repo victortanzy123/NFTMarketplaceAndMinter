@@ -6814,6 +6814,7 @@ __metadata:
     node-fetch: ^3.2.4
     prettier: ^2.6.2
     prettier-plugin-solidity: ^1.0.0-beta.19
+    solady: ^0.0.168
     solhint: ^3.3.7
     solidity-coverage: ^0.7.21
     ts-generator: ^0.1.1
@@ -11552,6 +11553,13 @@ __metadata:
     ip: ^1.1.5
     smart-buffer: ^4.2.0
   checksum: dd9194293059d737759d5c69273850ad4149f448426249325c4bea0e340d1cf3d266c3b022694b0dcf5d31f759de23657244c481fc1e8322add80b7985c36b5e
+  languageName: node
+  linkType: hard
+
+"solady@npm:^0.0.168":
+  version: 0.0.168
+  resolution: "solady@npm:0.0.168"
+  checksum: 87e1b61c2617ccc8a8ff793b26b6dbada7a2fcdb5b3e0854ec790bf859a157db935f4175602ac55756a8b0c6e3b6e171e410a7e02939f77e8e7c9eed2143c39c
   languageName: node
   linkType: hard
 

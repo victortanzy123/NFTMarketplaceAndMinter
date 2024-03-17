@@ -12,6 +12,7 @@
     "test:artzone-creator-v2": "npx hardhat test ./test/ArtzoneCreator/artzone-creator-test.ts",
     "deploy:bsc-testnet": "npx hardhat run --network bscTestnet deploy/main.ts",
     "deploy:sepolia": "npx hardhat run --network sepolia deploy/main.ts",
+    "deploy:scroll-test": "npx hardhat run --network scroll deploy/test-deploy.ts",
     "deploy:scrollTestnet": "npx hardhat run --network scrollTestnet deploy/main.ts",
     "deploy:goerli": "npx hardhat run --network goerli deploy/main.ts",
     "deploy:polygon": "npx hardhat run --network polygon deploy/main.ts",
@@ -33,7 +34,8 @@
     "@uniswap/v3-periphery": "^1.0.1",
     "@uniswap/v3-sdk": "^3.9.0",
     "hardhat": "^2.9.6",
-    "node-fetch": "^3.2.4"
+    "node-fetch": "^3.2.4",
+    "solady": "^0.0.168"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",

@@ -55,8 +55,8 @@ contract NiftyzoneMarketplace is
   Counters.Counter public totalListings;
 
   /// @dev Marketplace Edition State Variables:
-  bytes32 private constant MODULE_TYPE = bytes32("MarketplaceV2");
-  uint256 private constant VERSION = 3;
+  bytes32 private constant MODULE_TYPE = bytes32("Marketplace");
+  uint256 private constant VERSION = 1;
 
   /// @dev The max bps of the contract. So, 10_000 == 100 %
   uint64 public constant MAX_BPS = 10_000;
@@ -350,7 +350,7 @@ contract NiftyzoneMarketplace is
     updatedPrice = selectedListing.price;
     updatedDeadline = selectedListing.deadline;
 
-    emit MarketItemPriceUpdate(
+    emit MarketItemUpdate(
       _listingId,
       selectedListing.nftContract,
       selectedListing.tokenId,

@@ -84,7 +84,7 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
   /**
    * @dev Emitted when a seller updates the price and/or increase the expiration timing of the listing.
    */
-  event MarketItemPriceUpdate(
+  event MarketItemUpdate(
     uint256 indexed listingId,
     address indexed nftContract,
     uint256 tokenid,
@@ -132,6 +132,11 @@ interface INiftyzoneMarketplace is IMarketplaceMetadata {
     uint256 desiredQuantity,
     uint256 totalOfferAmount
   );
+
+  /**
+   * @dev Emitted when a ERC20 currency status is updated via admin.
+   */
+  event SupportCurrencyUpdate(address token, bool status);
 
   /*///////////////////////////////////////////////////////////////
                         Marketplace Functions

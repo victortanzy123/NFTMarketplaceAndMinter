@@ -183,6 +183,7 @@ export async function deployUUPSUpgradableContract<CType extends Contract>(
   let initializeTx = await implementation.populateTransaction.initialize(...initializer);
 
   console.log(`Deploying ${name}-proxy...`);
+  console.log('SEE INITIALISED TX DATA:', initializeTx.data);
   const proxyFactory = await hre.ethers.getContractFactory('ERC1967Proxy');
   const proxy = await proxyFactory.deploy(implementation.address, initializeTx.data!);
   console.log(`${name}-proxy deployed at address: ${(await proxy).address}`);

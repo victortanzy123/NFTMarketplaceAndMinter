@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@solady/*": ["node_modules/solady/src/*"]
+    },
     "target": "es2018",
     "module": "commonjs",
     "strict": false,

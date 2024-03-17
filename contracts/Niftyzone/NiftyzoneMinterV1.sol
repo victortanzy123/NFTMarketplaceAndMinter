@@ -13,7 +13,7 @@ import "../Helpers/ERC2981/ERC2981RoyaltiesPerToken.sol";
 
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-contract NiftyzoneMinter is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
+contract NiftyzoneMinterV1 is ERC1155, Ownable, ERC2981RoyaltiesPerToken {
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
 

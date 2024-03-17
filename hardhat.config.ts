@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 3000,
+            runs: 1000,
           },
         },
       },
@@ -89,7 +89,7 @@ const config: HardhatUserConfig = {
     },
     polygon: {
       url: `https://polygon-rpc.com`,
-      accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
+      accounts: [`${process.env.PRIVATE_KEY_TESTING || dummyPrivateKey}`],
       timeout: 200000,
     },
     polygonMumbai: {
@@ -121,7 +121,7 @@ const config: HardhatUserConfig = {
       timeout: 200000,
     },
     scroll: {
-      url: 'https://alpha-rpc.scroll.io/l2',
+      url: 'https://rpc.scroll.io/',
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
       timeout: 200000,
     },
@@ -129,6 +129,18 @@ const config: HardhatUserConfig = {
       chainId: 80085,
       accounts: [`${process.env.PRIVATE_KEY || dummyPrivateKey}`],
       url: 'https://artio.rpc.berachain.com/',
+    },
+    vienna: {
+      // Espresso
+      url: 'https://vienna.calderachain.xyz/http',
+      accounts: [`${process.env.P_243 || dummyPrivateKey}`],
+      chainId: 202374881,
+    },
+    milan: {
+      // Espresso
+      url: 'https://milan-devnet.rpc.caldera.xyz/http',
+      accounts: [`${process.env.P_243 || dummyPrivateKey}`],
+      chainId: 83782,
     },
   },
   typechain: {
